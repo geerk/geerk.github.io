@@ -3,8 +3,9 @@ layout: layout
 title: Персональный блог Тимофея Труханова
 ---
 
-<div class="content">
-  <div class="related">
+
+<div id="main_content_wrap" class="outer">
+  <section id="main_content" class="inner">
     <ul>
       {% for post in site.posts %}
       <li>
@@ -12,5 +13,5 @@ title: Персональный блог Тимофея Труханова
       </li>
       {% endfor %}
     </ul>
-  </div>
+  </section>
 </div>
