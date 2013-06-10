@@ -3,22 +3,22 @@
     <feed xmlns="http://www.w3.org/2005/Atom">
         <title>Кое-что о разном</title>
         
-        <link rel="alternate" href="http://trukhanov.net/" />
-        <link rel="self" href="http://trukhanov.net/feed.xml" type="application/atom+xml" />
-        <id>http://trukhanov.net/</id>
-        <updated>2013-06-10T16:52:23Z</updated>
+        <link rel="alternate" href="http://blog.trukhanov.net/" />
+        <link rel="self" href="http://blog.trukhanov.net/feed.xml" type="application/atom+xml" />
+        <id>http://blog.trukhanov.net/</id>
+        <updated>2013-06-10T17:26:57Z</updated>
         
         <author>
             <name>Timofey Trukhanov</name>
-            <email>timofey.truhanov@gmail.com</email>
-            <uri>http://trukhanov.net/</uri>
+            <email>timofey.trukhanov@gmail.com</email>
+            <uri>http://blog.trukhanov.net/</uri>
         </author>
         
         
             <entry>
                 <title>Таймстампы в пайтоне</title>
-                <link rel="alternate" href="http://trukhanov.net/Python-timestamps/" type="text/html" />
-                <id>http://trukhanov.net/Python-timestamps/</id>
+                <link rel="alternate" href="http://blog.trukhanov.net/Python-timestamps/" type="text/html" />
+                <id>http://blog.trukhanov.net/Python-timestamps/</id>
                 <updated>2013-06-09T16:52:00Z</updated>
                 
                 <summary type="html">Однажды в одном проекте мне понадобилось преобразовать &lt;code&gt;utc datetime&lt;/code&gt; в &lt;code&gt;unix timestamp&lt;/code&gt;.&lt;br&gt;
