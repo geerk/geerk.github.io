@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="author" content="Timofey Trukhanov">
+<meta name="description" content="Персональный блог Тимофея Труханова">
+<meta name="generator" content="mynt v0.2.2">
+
+<link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon">
+
+<link rel="alternate" href="/feed.xml" type="application/atom+xml">
+
+<link rel="stylesheet" href="/assets/css/screen.css" type="text/css">
+<link rel="stylesheet" href="/assets/css/pygments.css" type="text/css">
+
+
+    
+    <title>Таймстампы в пайтоне &ndash; Кое-что о разном</title>
+</head>
+
+<body>
+    <div id="container">
+        <div id="nav">
+            <ul>
+                <li><a href="/">Blog</a></li>
+                <li><a href="/archives/">Archives</a></li>
+                <li><a href="/feed.xml">Feed</a></li>
+            </ul>
+            
+            
+                <ul id="social">
+                    
+                    
+                    <li><a href="https://github.com/geerk"><img src="/assets/images/social/github.png" width="16" height="16" alt="GitHub"></a></li>
+                    
+                    
+                    
+                    
+                    <li><a href="https://twitter.com/#!/geerk"><img src="/assets/images/social/twitter.png" width="16" height="16" alt="Twitter"></a></li>
+                </ul>
+            
+        </div>
+        
+        <div id="header">
+            <h1><a href="/">Кое-что о разном</a></h1>
+            
+        </div>
+        
+        <div id="content">
+            
+    <div class="item">
+        <div class="header">
+            <h1>Таймстампы в пайтоне</h1>
+            <h2>Sunday, June 09, 2013 <span>&raquo;</span> <a href="/tags/">пайтон</a>, <a href="/tags/">программирование</a>, <a href="/tags/">таймстамп</a></h2>
+        </div>
+        
+        <div class="body">
+            <p>Однажды в одном проекте мне понадобилось преобразовать <code>utc datetime</code> в <code>unix timestamp</code>.<br>
+Сразу оговорюсь что описанное ниже относится к Python 2.7.</p>
+
+<p>Если просто погуглить, то везде советуют следующий способ:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5</pre></div></td><td class="code"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+<span class="n">timestamp</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">mktime</span><span class="p">(</span><span class="n">now</span><span class="o">.</span><span class="n">timetuple</span><span class="p">())</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>Все это правильно, но кто же пользуется локальным временем?<br>
+У меня естественно время в utc, поэтому следующий код с точки зрения использования модуля <code>time</code> является неправильным:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5</pre></div></td><td class="code"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="n">utcnow</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
+<span class="n">timestamp</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">mktime</span><span class="p">(</span><span class="n">utcnow</span><span class="o">.</span><span class="n">timetuple</span><span class="p">())</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>А выяснилось это только тогда, когда мне пришлось сравнивать этот таймстамп с другим таймстампом, созданным другим программистом. А создавал он его вот так:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3</pre></div></td><td class="code"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">time</span>
+
+<span class="n">timestamp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>И действительно, если погуглить на тему как получить юникс таймстамп в пайтоне, то именно это вы и найдете, однако такой способ правильный только в том случае, если вы везде используете локальное время, но кто же его использует? Соответственно разница между моим таймстампом и таймстампом этого программиста получилась 3 часа.</p>
+<h1>Документация</h1>
+<p>Далее обращаемся к документации пайтона по модулю time и обнаруживаем, что к функции <code>time.time()</code> вообще не написано какое время она возвращает - локальное или глобальное. Зато есть две другие функции: <code>time.localtime()</code> и <code>time.gmtime()</code>. Тут из названия очевидно какое время какая функция возвращает. Но! Обе эти функции возвращают не число, а <code>struct_time</code>.<br>
+А если почитать документацию к функции <code>time.mktime()</code>, то выясняется что эта функция ожидает в качестве аргумента <code>struct_time</code> в <strong>локальном</strong> времени. Логично предположить, что должна быть симметричная функция <code>time.mktimegm()</code> или что-то подобное. Но не тут то было. Оказывается чтобы преобразовать <code>struct_time</code> в <strong>глобальном</strong> времени необходимо обращаться к функции из совершенно другого модуля, а именно к <code>calendar.timegm()</code>. Что за черт?</p>
+
+<p>В документации даже можно найти такую табличку:</p>
+<pre><code>From                     | To                        | Use
+-------------------------|---------------------------|------------------
+seconds since the epoch  | struct_time in UTC        | gmtime()
+seconds since the epoch  | struct_time in local time | localtime()
+struct_time in UTC       | seconds since the epoch   | calendar.timegm()
+struct_time in local time| seconds since the epoch   | mktime()
+</code></pre><h1>Неочевидности</h1><div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9</pre></div></td><td class="code"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">calendar</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="n">ts1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">mktime</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">timetuple</span><span class="p">())</span>  <span class="c"># неправильно!</span>
+<span class="n">ts2</span> <span class="o">=</span> <span class="n">calendar</span><span class="o">.</span><span class="n">timegm</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">.</span><span class="n">timetuple</span><span class="p">())</span>  <span class="c"># правильно!</span>
+
+<span class="n">ts3</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">mktime</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">gmtime</span><span class="p">())</span>  <span class="c"># неправильно!</span>
+<span class="n">ts4</span> <span class="o">=</span> <span class="n">calendar</span><span class="o">.</span><span class="n">timegm</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">gmtime</span><span class="p">())</span>  <span class="c"># правильно!</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>Казалось бы, теперь все прояснилось и стало все понятно, однако:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2</pre></div></td><td class="code"><div class="highlight"><pre><span class="k">print</span><span class="p">((</span><span class="n">ts1</span> <span class="o">-</span> <span class="n">ts2</span><span class="p">)</span> <span class="o">/</span> <span class="mi">60</span> <span class="o">/</span> <span class="mi">60</span><span class="p">)</span>  <span class="c"># -3.0</span>
+<span class="k">print</span><span class="p">((</span><span class="n">ts3</span> <span class="o">-</span> <span class="n">ts4</span><span class="p">)</span> <span class="o">/</span> <span class="mi">60</span> <span class="o">/</span> <span class="mi">60</span><span class="p">)</span>  <span class="c"># -2.0</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>В первом случае разница между правильным и неправильным вариантом оказалась 3 часа, а во втором случае 2 часа.</p>
+<h1>Выводы</h1>
+<p>Получение глобального таймстампа используя модули <code>time</code> и <code>calendar</code>:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5</pre></div></td><td class="code"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">calendar</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="n">utc_struct_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">gmtime</span><span class="p">()</span>
+<span class="n">utc_ts</span> <span class="o">=</span> <span class="n">calendar</span><span class="o">.</span><span class="n">timegm</span><span class="p">(</span><span class="n">utc_struct_time</span><span class="p">)</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>Получение глобального таймстампа используя модули <code>datetime</code> и <code>calendar</code>:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5</pre></div></td><td class="code"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">calendar</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="n">utc_dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span>
+<span class="n">utc_ts</span> <span class="o">=</span> <span class="n">calendar</span><span class="o">.</span><span class="n">timegm</span><span class="p">(</span><span class="n">utc_dt</span><span class="o">.</span><span class="n">timetuple</span><span class="p">())</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>И проверяйте то, что пишут в блогах перед тем как использовать :)</p>
+
+        </div>
+    </div>
+
+        </div>
+        
+        <div id="footer">
+            <p>Copyright &copy; 2013 Timofey Trukhanov &ndash; powered by <a href="http://mynt.mirroredwhite.com/">mynt</a></p>
+        </div>
+    </div>
+</body>
+</html>

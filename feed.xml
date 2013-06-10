@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+    <feed xmlns="http://www.w3.org/2005/Atom">
+        <title>Кое-что о разном</title>
+        
+        <link rel="alternate" href="http://trukhanov.net/" />
+        <link rel="self" href="http://trukhanov.net/feed.xml" type="application/atom+xml" />
+        <id>http://trukhanov.net/</id>
+        <updated>2013-06-10T16:49:29Z</updated>
+        
+        <author>
+            <name>Timofey Trukhanov</name>
+            <email>timofey.truhanov@gmail.com</email>
+            <uri>http://trukhanov.net/</uri>
+        </author>
+        
+        
+            <entry>
+                <title>Таймстампы в пайтоне</title>
+                <link rel="alternate" href="http://trukhanov.net/Python-timestamps/" type="text/html" />
+                <id>http://trukhanov.net/Python-timestamps/</id>
+                <updated>2013-06-09T16:49:00Z</updated>
+                
+                <summary type="html">Однажды в одном проекте мне понадобилось преобразовать &lt;code&gt;utc datetime&lt;/code&gt; в &lt;code&gt;unix timestamp&lt;/code&gt;.&lt;br&gt;
+Сразу оговорюсь что описанное ниже относится к Python 2.7.</summary>
+                <content type="html">&lt;p&gt;Однажды в одном проекте мне понадобилось преобразовать &lt;code&gt;utc datetime&lt;/code&gt; в &lt;code&gt;unix timestamp&lt;/code&gt;.&lt;br&gt;
+Сразу оговорюсь что описанное ниже относится к Python 2.7.&lt;/p&gt;
+
+&lt;p&gt;Если просто погуглить, то везде советуют следующий способ:&lt;/p&gt;
+&lt;pre lang=&#34;python&#34;&gt;&lt;code&gt;from datetime import datetime
+import time
+
+now = datetime.now()
+timestamp = time.mktime(now.timetuple())
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Все это правильно, но кто же пользуется локальным временем?&lt;br&gt;
+У меня естественно время в utc, поэтому следующий код с точки зрения использования модуля &lt;code&gt;time&lt;/code&gt; является неправильным:&lt;/p&gt;
+&lt;pre lang=&#34;python&#34;&gt;&lt;code&gt;from datetime import datetime
+import time
+
+utcnow = datetime.utcnow()
+timestamp = time.mktime(utcnow.timetuple())
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;А выяснилось это только тогда, когда мне пришлось сравнивать этот таймстамп с другим таймстампом, созданным другим программистом. А создавал он его вот так:&lt;/p&gt;
+&lt;pre lang=&#34;python&#34;&gt;&lt;code&gt;import time
+
+timestamp = int(time.time())
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;И действительно, если погуглить на тему как получить юникс таймстамп в пайтоне, то именно это вы и найдете, однако такой способ правильный только в том случае, если вы везде используете локальное время, но кто же его использует? Соответственно разница между моим таймстампом и таймстампом этого программиста получилась 3 часа.&lt;/p&gt;
+&lt;h1&gt;Документация&lt;/h1&gt;
+&lt;p&gt;Далее обращаемся к документации пайтона по модулю time и обнаруживаем, что к функции &lt;code&gt;time.time()&lt;/code&gt; вообще не написано какое время она возвращает - локальное или глобальное. Зато есть две другие функции: &lt;code&gt;time.localtime()&lt;/code&gt; и &lt;code&gt;time.gmtime()&lt;/code&gt;. Тут из названия очевидно какое время какая функция возвращает. Но! Обе эти функции возвращают не число, а &lt;code&gt;struct_time&lt;/code&gt;.&lt;br&gt;
+А если почитать документацию к функции &lt;code&gt;time.mktime()&lt;/code&gt;, то выясняется что эта функция ожидает в качестве аргумента &lt;code&gt;struct_time&lt;/code&gt; в &lt;strong&gt;локальном&lt;/strong&gt; времени. Логично предположить, что должна быть симметричная функция &lt;code&gt;time.mktimegm()&lt;/code&gt; или что-то подобное. Но не тут то было. Оказывается чтобы преобразовать &lt;code&gt;struct_time&lt;/code&gt; в &lt;strong&gt;глобальном&lt;/strong&gt; времени необходимо обращаться к функции из совершенно другого модуля, а именно к &lt;code&gt;calendar.timegm()&lt;/code&gt;. Что за черт?&lt;/p&gt;
+
+&lt;p&gt;В документации даже можно найти такую табличку:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;From                     | To                        | Use
+-------------------------|---------------------------|------------------
+seconds since the epoch  | struct_time in UTC        | gmtime()
+seconds since the epoch  | struct_time in local time | localtime()
+struct_time in UTC       | seconds since the epoch   | calendar.timegm()
+struct_time in local time| seconds since the epoch   | mktime()
+&lt;/code&gt;&lt;/pre&gt;&lt;h1&gt;Неочевидности&lt;/h1&gt;&lt;pre lang=&#34;python&#34;&gt;&lt;code&gt;import time
+import calendar
+from datetime import datetime
+
+ts1 = time.mktime(datetime.utcnow().timetuple())  # неправильно!
+ts2 = calendar.timegm(datetime.utcnow().timetuple())  # правильно!
+
+ts3 = time.mktime(time.gmtime())  # неправильно!
+ts4 = calendar.timegm(time.gmtime())  # правильно!
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Казалось бы, теперь все прояснилось и стало все понятно, однако:&lt;/p&gt;
+&lt;pre lang=&#34;python&#34;&gt;&lt;code&gt;print((ts1 - ts2) / 60 / 60)  # -3.0
+print((ts3 - ts4) / 60 / 60)  # -2.0
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;В первом случае разница между правильным и неправильным вариантом оказалась 3 часа, а во втором случае 2 часа.&lt;/p&gt;
+&lt;h1&gt;Выводы&lt;/h1&gt;
+&lt;p&gt;Получение глобального таймстампа используя модули &lt;code&gt;time&lt;/code&gt; и &lt;code&gt;calendar&lt;/code&gt;:&lt;/p&gt;
+&lt;pre lang=&#34;python&#34;&gt;&lt;code&gt;import calendar
+import time
+
+utc_struct_time = time.gmtime()
+utc_ts = calendar.timegm(utc_struct_time)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Получение глобального таймстампа используя модули &lt;code&gt;datetime&lt;/code&gt; и &lt;code&gt;calendar&lt;/code&gt;:&lt;/p&gt;
+&lt;pre lang=&#34;python&#34;&gt;&lt;code&gt;import calendar
+from datetime import datetime
+
+utc_dt = datetime.utcnow()
+utc_ts = calendar.timegm(utc_dt.timetuple())
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;И проверяйте то, что пишут в блогах перед тем как использовать :)&lt;/p&gt;
+</content>
+            </entry>
+        
+    </feed>
