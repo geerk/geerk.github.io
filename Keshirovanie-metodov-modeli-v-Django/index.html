@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="author" content="Timofey Trukhanov">
+<meta name="description" content="Персональный блог Тимофея Труханова">
+<meta name="generator" content="mynt v0.2.3">
+
+<link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon">
+
+<link rel="alternate" href="/feed.xml" type="application/atom+xml">
+
+<link rel="stylesheet" href="/assets/css/screen.css" type="text/css">
+<link rel="stylesheet" href="/assets/css/pygments.css" type="text/css">
+
+
+    <script type="text/javascript">
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-41614976-1']);
+        _gaq.push(['_trackPageview']);
+        
+        (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
+
+    
+    <title>Кеширование методов модели в Джанго &ndash; Кое-что о разном</title>
+</head>
+
+<body>
+    <div id="container">
+        <div id="nav">
+            <ul>
+                <li><a href="/">Blog</a></li>
+                <li><a href="/archives/">Archives</a></li>
+                <li><a href="/feed.xml">Feed</a></li>
+            </ul>
+                <ul id="social">
+            
+                    
+                    
+                    <li><a href="https://github.com/geerk"><img src="/assets/images/social/github.png" width="16" height="16" alt="GitHub"></a></li>
+                    
+                    
+                    
+                    
+                    <li><a href="https://twitter.com/#!/geerk"><img src="/assets/images/social/twitter.png" width="16" height="16" alt="Twitter"></a></li>
+            
+                    <li><a href="http://masters.donntu.edu.ua/2013/fknt/trukhanov/">ДонНТУ</a></li>
+                </ul>
+        </div>
+        
+        <div id="header">
+            <h1><a href="/">Кое-что о разном</a></h1>
+            
+        </div>
+        
+        <div id="content">
+            
+    <div class="item">
+        <div class="header">
+            <h1>Кеширование методов модели в Джанго</h1>
+            <h2>Monday, July 08, 2013 <span>&raquo;</span> <a href="/tags/">джанго</a>, <a href="/tags/">кеширование</a>, <a href="/tags/">пайтон</a>, <a href="/tags/">программирование</a></h2>
+        </div>
+        
+        <div class="body">
+            <p>В книге <a href="http://django.2scoops.org/">Two scoops of Django</a> советуют всю бизнесовую логику держать в моделях. И я с этим согласен, это действительно удобно. Один из самых простых методов реализации этого совета - написание дополнительных методов в модели для добавления необходимого поведения. Эти методы потом можно использовать как в контроллерах (views) так и в представлениях (templates).</p>
+
+<p>В процессе создания приложения зачастую возникает необходимость вызывать эти методы по нескольку раз в разных местах программы. А если в этом методе происходит работа с базой данных, то это приводит к нежелательному дублированию одинаковых запросов. К счастью есть возможность избежать этого дублирования в пределах одного вызова контроллера.</p>
+
+<p>Например в модели <code>User</code> нужен метод, возвращающий количество непрочитанных сообщений:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2</pre></div></td><td class="code"><div class="highlight"><pre><span class="k">def</span> <span class="nf">get_unread_message_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">is_read</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>Результат выполнения этого метода необходимо показать в разных частях страницы (возле логина, рядом с кнопкой перехода на страницу сообщений, еще где-нибудь). Соответственно каждый вызов метода будет делать запрос к базе данных. Чтобы этого избежать можно использовать кеширование результата запроса. Стандартная схема выглядит следующим образом:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4</pre></div></td><td class="code"><div class="highlight"><pre><span class="k">def</span> <span class="nf">get_unread_message_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;_cached_unread_message_count&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cached_unread_message_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">messages</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">is_read</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_unread_message_count</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>При первом вызове метода у модели не будет атрибута <code>_cached_unread_message_count</code>, поэтому выполнится запрос к базе данных и результат сохранится в атрибут модели <code>_cached_unread_message_count</code>. При повторном вызове этого метода у модели уже будет этот атрибут, в котором будет храниться результат выполнения предыдущего раза. И вместо выполнения запроса еще раз метод вернет закешированный результат первого вызова.</p>
+
+<p>Такой подход позволяет сократить количество повторяющихся запросов к базе данных в пределах одного запроса к Джанго серверу. Естественно при обновлении страницы этот метод выполнит запрос к базе данных еще раз. Для того, чтобы кешировать данные на более длительный период необходимо использовать <a href="https://docs.djangoproject.com/en/1.5/topics/cache/">стандартное кеширование</a>.</p>
+
+        </div>
+    </div>
+
+        </div>
+        
+        <div id="footer">
+            <p>Copyright &copy; 2013 Timofey Trukhanov &ndash; powered by <a href="http://mynt.mirroredwhite.com/">mynt</a></p>
+        </div>
+    </div>
+</body>
+</html>

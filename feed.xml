@@ -6,7 +6,7 @@
         <link rel="alternate" href="http://blog.trukhanov.net/" />
         <link rel="self" href="http://blog.trukhanov.net/feed.xml" type="application/atom+xml" />
         <id>http://blog.trukhanov.net/</id>
-        <updated>2013-06-11T05:39:27Z</updated>
+        <updated>2013-07-08T20:01:17Z</updated>
         
         <author>
             <name>Timofey Trukhanov</name>
@@ -14,6 +14,33 @@
             <uri>http://blog.trukhanov.net/</uri>
         </author>
         
+        
+            <entry>
+                <title>Кеширование методов модели в Джанго</title>
+                <link rel="alternate" href="http://blog.trukhanov.net/Keshirovanie-metodov-modeli-v-Django/" type="text/html" />
+                <id>http://blog.trukhanov.net/Keshirovanie-metodov-modeli-v-Django/</id>
+                <updated>2013-07-08T19:45:00Z</updated>
+                
+                <summary type="html">В книге &lt;a href=&#34;http://django.2scoops.org/&#34;&gt;Two scoops of Django&lt;/a&gt; советуют всю бизнесовую логику держать в моделях. И я с этим согласен, это действительно удобно. Один из самых простых методов реализации этого совета - написание дополнительных методов в модели для добавления необходимого поведения. Эти методы потом можно использовать как в контроллерах (views) так и в представлениях (templates).</summary>
+                <content type="html">&lt;p&gt;В книге &lt;a href=&#34;http://django.2scoops.org/&#34;&gt;Two scoops of Django&lt;/a&gt; советуют всю бизнесовую логику держать в моделях. И я с этим согласен, это действительно удобно. Один из самых простых методов реализации этого совета - написание дополнительных методов в модели для добавления необходимого поведения. Эти методы потом можно использовать как в контроллерах (views) так и в представлениях (templates).&lt;/p&gt;
+
+&lt;p&gt;В процессе создания приложения зачастую возникает необходимость вызывать эти методы по нескольку раз в разных местах программы. А если в этом методе происходит работа с базой данных, то это приводит к нежелательному дублированию одинаковых запросов. К счастью есть возможность избежать этого дублирования в пределах одного вызова контроллера.&lt;/p&gt;
+
+&lt;p&gt;Например в модели &lt;code&gt;User&lt;/code&gt; нужен метод, возвращающий количество непрочитанных сообщений:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;def get_unread_message_count(self):
+    return self.messages.filter(is_read=False).count()
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Результат выполнения этого метода необходимо показать в разных частях страницы (возле логина, рядом с кнопкой перехода на страницу сообщений, еще где-нибудь). Соответственно каждый вызов метода будет делать запрос к базе данных. Чтобы этого избежать можно использовать кеширование результата запроса. Стандартная схема выглядит следующим образом:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;def get_unread_message_count(self):
+    if not hasattr(self, &amp;#x27;_cached_unread_message_count&amp;#x27;):
+        self._cached_unread_message_count = self.messages.filter(is_read=False).count()
+    return self._cached_unread_message_count
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;При первом вызове метода у модели не будет атрибута &lt;code&gt;_cached_unread_message_count&lt;/code&gt;, поэтому выполнится запрос к базе данных и результат сохранится в атрибут модели &lt;code&gt;_cached_unread_message_count&lt;/code&gt;. При повторном вызове этого метода у модели уже будет этот атрибут, в котором будет храниться результат выполнения предыдущего раза. И вместо выполнения запроса еще раз метод вернет закешированный результат первого вызова.&lt;/p&gt;
+
+&lt;p&gt;Такой подход позволяет сократить количество повторяющихся запросов к базе данных в пределах одного запроса к Джанго серверу. Естественно при обновлении страницы этот метод выполнит запрос к базе данных еще раз. Для того, чтобы кешировать данные на более длительный период необходимо использовать &lt;a href=&#34;https://docs.djangoproject.com/en/1.5/topics/cache/&#34;&gt;стандартное кеширование&lt;/a&gt;.&lt;/p&gt;
+</content>
+            </entry>
         
             <entry>
                 <title>Таймстампы в пайтоне</title>
@@ -27,7 +54,7 @@
 Сразу оговорюсь что описанное ниже относится к Python 2.7.&lt;/p&gt;
 
 &lt;p&gt;Если просто погуглить, то везде советуют следующий способ:&lt;/p&gt;
-&lt;pre lang=&#34;python&#34;&gt;&lt;code&gt;from datetime import datetime
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;from datetime import datetime
 import time
 
 now = datetime.now()
@@ -35,14 +62,14 @@ timestamp = time.mktime(now.timetuple())
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Все это правильно, но кто же пользуется локальным временем?&lt;br&gt;
 У меня естественно время в utc, поэтому следующий код с точки зрения использования модуля &lt;code&gt;time&lt;/code&gt; является неправильным:&lt;/p&gt;
-&lt;pre lang=&#34;python&#34;&gt;&lt;code&gt;from datetime import datetime
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;from datetime import datetime
 import time
 
 utcnow = datetime.utcnow()
 timestamp = time.mktime(utcnow.timetuple())
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;А выяснилось это только тогда, когда мне пришлось сравнивать этот таймстамп с другим таймстампом, созданным другим программистом. А создавал он его вот так:&lt;/p&gt;
-&lt;pre lang=&#34;python&#34;&gt;&lt;code&gt;import time
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;import time
 
 timestamp = int(time.time())
 &lt;/code&gt;&lt;/pre&gt;
@@ -58,7 +85,7 @@ seconds since the epoch  | struct_time in UTC        | gmtime()
 seconds since the epoch  | struct_time in local time | localtime()
 struct_time in UTC       | seconds since the epoch   | calendar.timegm()
 struct_time in local time| seconds since the epoch   | mktime()
-&lt;/code&gt;&lt;/pre&gt;&lt;h1&gt;Неочевидности&lt;/h1&gt;&lt;pre lang=&#34;python&#34;&gt;&lt;code&gt;import time
+&lt;/code&gt;&lt;/pre&gt;&lt;h1&gt;Неочевидности&lt;/h1&gt;&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;import time
 import calendar
 from datetime import datetime
 
@@ -69,20 +96,20 @@ ts3 = time.mktime(time.gmtime())  # неправильно!
 ts4 = calendar.timegm(time.gmtime())  # правильно!
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Казалось бы, теперь все прояснилось и стало все понятно, однако:&lt;/p&gt;
-&lt;pre lang=&#34;python&#34;&gt;&lt;code&gt;print((ts1 - ts2) / 60 / 60)  # -3.0
-print((ts3 - ts4) / 60 / 60)  # -2.0
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;print((ts1 - ts2) &amp;#x2F; 60 &amp;#x2F; 60)  # -3.0
+print((ts3 - ts4) &amp;#x2F; 60 &amp;#x2F; 60)  # -2.0
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;В первом случае разница между правильным и неправильным вариантом оказалась 3 часа, а во втором случае 2 часа.&lt;/p&gt;
 &lt;h1&gt;Выводы&lt;/h1&gt;
 &lt;p&gt;Получение глобального таймстампа используя модули &lt;code&gt;time&lt;/code&gt; и &lt;code&gt;calendar&lt;/code&gt;:&lt;/p&gt;
-&lt;pre lang=&#34;python&#34;&gt;&lt;code&gt;import calendar
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;import calendar
 import time
 
 utc_struct_time = time.gmtime()
 utc_ts = calendar.timegm(utc_struct_time)
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Получение глобального таймстампа используя модули &lt;code&gt;datetime&lt;/code&gt; и &lt;code&gt;calendar&lt;/code&gt;:&lt;/p&gt;
-&lt;pre lang=&#34;python&#34;&gt;&lt;code&gt;import calendar
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;import calendar
 from datetime import datetime
 
 utc_dt = datetime.utcnow()
