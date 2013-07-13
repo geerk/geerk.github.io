@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
     <feed xmlns="http://www.w3.org/2005/Atom">
-        <title>Кое-что о разном</title>
+        <title>Труханов блог</title>
         
         <link rel="alternate" href="http://blog.trukhanov.net/" />
         <link rel="self" href="http://blog.trukhanov.net/feed.xml" type="application/atom+xml" />
         <id>http://blog.trukhanov.net/</id>
-        <updated>2013-07-08T20:01:17Z</updated>
+        <updated>2013-07-13T15:19:09Z</updated>
         
         <author>
             <name>Timofey Trukhanov</name>
@@ -14,6 +14,51 @@
             <uri>http://blog.trukhanov.net/</uri>
         </author>
         
+        
+            <entry>
+                <title>Простой способ выделения активной вкладки меню в Джанго</title>
+                <link rel="alternate" href="http://blog.trukhanov.net/Prostoy-sposob-vydeleniya-aktivnoy-vrladki-menu-v-Django/" type="text/html" />
+                <id>http://blog.trukhanov.net/Prostoy-sposob-vydeleniya-aktivnoy-vrladki-menu-v-Django/</id>
+                <updated>2013-07-12T14:06:00Z</updated>
+                
+                <summary type="html">Одна из частых задач при разработке типичного сайта - на разных страницах выделять текущий активный раздел сайта или меню. Это могут быть как просто разделы меню так и вкладки или что-то другое. Как правило для выделения вкладки прописывается дополнительный класс &lt;code&gt;active&lt;/code&gt; в css и выделением является присваивание этого класа нужному html-блоку при генерации страниц.</summary>
+                <content type="html">&lt;p&gt;Одна из частых задач при разработке типичного сайта - на разных страницах выделять текущий активный раздел сайта или меню. Это могут быть как просто разделы меню так и вкладки или что-то другое. Как правило для выделения вкладки прописывается дополнительный класс &lt;code&gt;active&lt;/code&gt; в css и выделением является присваивание этого класа нужному html-блоку при генерации страниц.&lt;/p&gt;
+
+&lt;p&gt;Самый простой способ это реализовать заключается в добавлении переменной &lt;code&gt;active_tab&lt;/code&gt; в контекст шаблона и в зависимости от значения этой переменной выделять нужную вкладку. Для упрощения добавления этой переменной можно написать простенький миксин:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;class ActiveTabMixin(object):
+    &amp;quot;&amp;quot;&amp;quot;
+    Mixin to set active tab menu
+    &amp;quot;&amp;quot;&amp;quot;
+    active_tab = None
+
+    def get_active_tab(self):
+        if self.active_tab is None:
+            raise ImproperlyConfigured(
+                &amp;quot;ActiveTabMixin requires either a definition of &amp;quot;
+                &amp;quot;&amp;#x27;active_tab&amp;#x27; or an implementation of &amp;#x27;get_active_tab()&amp;#x27;&amp;quot;)
+        return self.active_tab
+
+    def get_context_data(self, **kwargs):
+        context = super(ActiveTabMixin, self).get_context_data(**kwargs)
+        context[&amp;#x27;active_tab&amp;#x27;] = self.get_active_tab()
+        return context
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;После чего можно &amp;ldquo;подмешивать&amp;rdquo; его в класс представлений (views) и с помощью атрибута класса определять активную вкладку для данной страницы.&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;class MeetingDetailView(ActiveTabMixin, DetailView):
+    model = Meeting
+    active_tab = &amp;#x27;meetings&amp;#x27;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Во избежание дублирования кода можно выделить специальный шаблон &lt;code&gt;menu.html&lt;/code&gt; и в нем генерировать вкладки, выделяя активную с помощью вышеописанного метода.&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;&amp;lt;ul&amp;gt;
+    &amp;lt;li{% if active_tab == &amp;#x27;dashboard&amp;#x27; %} class=&amp;quot;active&amp;quot;{% endif %}&amp;gt;&amp;lt;a href=&amp;quot;#&amp;quot;&amp;gt;Dashboard&amp;lt;&amp;#x2F;a&amp;gt;&amp;lt;&amp;#x2F;li&amp;gt;
+    &amp;lt;li{% if active_tab == &amp;#x27;calendar&amp;#x27; %} class=&amp;quot;active&amp;quot;{% endif %}&amp;gt;&amp;lt;a href=&amp;quot;#&amp;quot;&amp;gt;Calendar&amp;lt;&amp;#x2F;a&amp;gt;&amp;lt;&amp;#x2F;li&amp;gt;
+    &amp;lt;li{% if active_tab == &amp;#x27;meetings&amp;#x27; %} class=&amp;quot;active&amp;quot;{% endif %}&amp;gt;&amp;lt;a href=&amp;quot;#&amp;quot;&amp;gt;Meetings&amp;lt;&amp;#x2F;a&amp;gt;&amp;lt;&amp;#x2F;li&amp;gt;
+    &amp;lt;li{% if active_tab == &amp;#x27;archives&amp;#x27; %} class=&amp;quot;active&amp;quot;{% endif %}&amp;gt;&amp;lt;a href=&amp;quot;#&amp;quot;&amp;gt;Archives&amp;lt;&amp;#x2F;a&amp;gt;&amp;lt;&amp;#x2F;li&amp;gt;
+&amp;lt;&amp;#x2F;ul&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Этот способ не универсальный и работает только в простых случаях одноуровневого меню. Можно такой же функционал завязать на URL текущей страницы, привязавшись либо к &lt;code&gt;namespace&lt;/code&gt; либо к имени URL. Но такой способ подразумевает детальную синхронизацию URL-ов и шаблонов.&lt;/p&gt;
+</content>
+            </entry>
         
             <entry>
                 <title>Кеширование методов модели в Джанго</title>

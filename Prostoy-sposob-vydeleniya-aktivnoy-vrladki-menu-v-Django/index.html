@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="author" content="Timofey Trukhanov">
+<meta name="description" content="Персональный блог Тимофея Труханова">
+<meta name="generator" content="mynt v0.2.3">
+
+<link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon">
+
+<link rel="alternate" href="/feed.xml" type="application/atom+xml">
+
+<link rel="stylesheet" href="/assets/css/screen.css" type="text/css">
+<link rel="stylesheet" href="/assets/css/pygments.css" type="text/css">
+
+
+    <script type="text/javascript">
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-41614976-1']);
+        _gaq.push(['_trackPageview']);
+        
+        (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
+
+
+    <title>Простой способ выделения активной вкладки меню в Джанго &ndash; Труханов блог</title>
+</head>
+
+<body>
+    <div id="container">
+        <div id="nav">
+            <ul>
+                <li><a href="/">Blog</a></li>
+                <li><a href="/archives/">Archives</a></li>
+                <li><a href="/feed.xml">Feed</a></li>
+            </ul>
+                <ul id="social">
+            
+                    
+                    
+                    <li><a href="https://github.com/geerk"><img src="/assets/images/social/github.png" width="16" height="16" alt="GitHub"></a></li>
+                    
+                    
+                    
+                    
+                    <li><a href="https://twitter.com/#!/geerk"><img src="/assets/images/social/twitter.png" width="16" height="16" alt="Twitter"></a></li>
+            
+                    <li><a href="http://masters.donntu.edu.ua/2013/fknt/trukhanov/">ДонНТУ</a></li>
+                </ul>
+        </div>
+
+        <div id="header">
+            <h1><a href="/">Труханов блог</a></h1>
+            
+        </div>
+
+        <div id="content">
+            
+    <div class="item">
+        <div class="header">
+            <h1>Простой способ выделения активной вкладки меню в Джанго</h1>
+            <h2>Friday, July 12, 2013 <span>&raquo;</span> <a href="/tags/">джанго</a>, <a href="/tags/">миксин</a>, <a href="/tags/">пайтон</a>, <a href="/tags/">программирование</a></h2>
+        </div>
+        
+        <div class="body">
+            <p>Одна из частых задач при разработке типичного сайта - на разных страницах выделять текущий активный раздел сайта или меню. Это могут быть как просто разделы меню так и вкладки или что-то другое. Как правило для выделения вкладки прописывается дополнительный класс <code>active</code> в css и выделением является присваивание этого класа нужному html-блоку при генерации страниц.</p>
+
+<p>Самый простой способ это реализовать заключается в добавлении переменной <code>active_tab</code> в контекст шаблона и в зависимости от значения этой переменной выделять нужную вкладку. Для упрощения добавления этой переменной можно написать простенький миксин:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17</pre></div></td><td class="code"><div class="highlight"><pre><span class="k">class</span> <span class="nc">ActiveTabMixin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Mixin to set active tab menu</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">active_tab</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">get_active_tab</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_tab</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ImproperlyConfigured</span><span class="p">(</span>
+                <span class="s">&quot;ActiveTabMixin requires either a definition of &quot;</span>
+                <span class="s">&quot;&#39;active_tab&#39; or an implementation of &#39;get_active_tab()&#39;&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_tab</span>
+
+    <span class="k">def</span> <span class="nf">get_context_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">ActiveTabMixin</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">get_context_data</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">context</span><span class="p">[</span><span class="s">&#39;active_tab&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_active_tab</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">context</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>После чего можно &ldquo;подмешивать&rdquo; его в класс представлений (views) и с помощью атрибута класса определять активную вкладку для данной страницы.</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3</pre></div></td><td class="code"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MeetingDetailView</span><span class="p">(</span><span class="n">ActiveTabMixin</span><span class="p">,</span> <span class="n">DetailView</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Meeting</span>
+    <span class="n">active_tab</span> <span class="o">=</span> <span class="s">&#39;meetings&#39;</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>Во избежание дублирования кода можно выделить специальный шаблон <code>menu.html</code> и в нем генерировать вкладки, выделяя активную с помощью вышеописанного метода.</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5
+6</pre></div></td><td class="code"><div class="highlight"><pre><span class="o">&lt;</span><span class="n">ul</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">li</span><span class="p">{</span><span class="o">%</span> <span class="k">if</span> <span class="n">active_tab</span> <span class="o">==</span> <span class="s">&#39;dashboard&#39;</span> <span class="o">%</span><span class="p">}</span> <span class="n">class</span><span class="o">=</span><span class="s">&quot;active&quot;</span><span class="p">{</span><span class="o">%</span> <span class="n">endif</span> <span class="o">%</span><span class="p">}</span><span class="o">&gt;&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s">&quot;#&quot;</span><span class="o">&gt;</span><span class="n">Dashboard</span><span class="o">&lt;/</span><span class="n">a</span><span class="o">&gt;&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">li</span><span class="p">{</span><span class="o">%</span> <span class="k">if</span> <span class="n">active_tab</span> <span class="o">==</span> <span class="s">&#39;calendar&#39;</span> <span class="o">%</span><span class="p">}</span> <span class="n">class</span><span class="o">=</span><span class="s">&quot;active&quot;</span><span class="p">{</span><span class="o">%</span> <span class="n">endif</span> <span class="o">%</span><span class="p">}</span><span class="o">&gt;&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s">&quot;#&quot;</span><span class="o">&gt;</span><span class="n">Calendar</span><span class="o">&lt;/</span><span class="n">a</span><span class="o">&gt;&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">li</span><span class="p">{</span><span class="o">%</span> <span class="k">if</span> <span class="n">active_tab</span> <span class="o">==</span> <span class="s">&#39;meetings&#39;</span> <span class="o">%</span><span class="p">}</span> <span class="n">class</span><span class="o">=</span><span class="s">&quot;active&quot;</span><span class="p">{</span><span class="o">%</span> <span class="n">endif</span> <span class="o">%</span><span class="p">}</span><span class="o">&gt;&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s">&quot;#&quot;</span><span class="o">&gt;</span><span class="n">Meetings</span><span class="o">&lt;/</span><span class="n">a</span><span class="o">&gt;&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
+    <span class="o">&lt;</span><span class="n">li</span><span class="p">{</span><span class="o">%</span> <span class="k">if</span> <span class="n">active_tab</span> <span class="o">==</span> <span class="s">&#39;archives&#39;</span> <span class="o">%</span><span class="p">}</span> <span class="n">class</span><span class="o">=</span><span class="s">&quot;active&quot;</span><span class="p">{</span><span class="o">%</span> <span class="n">endif</span> <span class="o">%</span><span class="p">}</span><span class="o">&gt;&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s">&quot;#&quot;</span><span class="o">&gt;</span><span class="n">Archives</span><span class="o">&lt;/</span><span class="n">a</span><span class="o">&gt;&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
+<span class="o">&lt;/</span><span class="n">ul</span><span class="o">&gt;</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>Этот способ не универсальный и работает только в простых случаях одноуровневого меню. Можно такой же функционал завязать на URL текущей страницы, привязавшись либо к <code>namespace</code> либо к имени URL. Но такой способ подразумевает детальную синхронизацию URL-ов и шаблонов.</p>
+
+        </div>
+    </div>
+
+        </div>
+
+        <div id="footer">
+        <p style="float: right; margin-top: 0px;"><a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.ru"><img alt="Лицензия Creative Commons" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/80x15.png" /></a></p><p>Copyright &copy; 2013 Timofey Trukhanov &ndash; powered by <a href="http://mynt.mirroredwhite.com/">mynt</a></p>
+        </div>
+    </div>
+</body>
+</html>
