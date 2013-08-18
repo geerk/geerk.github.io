@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="author" content="Timofey Trukhanov">
+<meta name="description" content="Персональный блог Тимофея Труханова">
+<meta name="generator" content="mynt v0.2.3">
+
+<link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon">
+
+<link rel="alternate" href="/feed.xml" type="application/atom+xml">
+
+<link rel="stylesheet" href="/assets/css/screen.css" type="text/css">
+<link rel="stylesheet" href="/assets/css/pygments.css" type="text/css">
+
+
+    <script type="text/javascript">
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-41614976-1']);
+        _gaq.push(['_trackPageview']);
+
+        (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
+
+
+    <title>Условные подзапросы в Джанго &ndash; Труханов блог</title>
+</head>
+
+<body>
+    <div id="container">
+        <div id="nav">
+            <ul>
+                <li><a href="/">Blog</a></li>
+                <li><a href="/archives/">Archives</a></li>
+                <li><a href="/feed.xml">Feed</a></li>
+            </ul>
+                <ul id="social">
+            
+                    
+                    
+                    <li><a href="https://github.com/geerk"><img src="/assets/images/social/github.png" width="16" height="16" alt="GitHub"></a></li>
+                    
+                    
+                    
+                    
+                    <li><a href="https://twitter.com/#!/geerk"><img src="/assets/images/social/twitter.png" width="16" height="16" alt="Twitter"></a></li>
+            
+                    <li><a href="http://masters.donntu.edu.ua/2013/fknt/trukhanov/">ДонНТУ</a></li>
+                </ul>
+        </div>
+
+        <div id="header">
+            <h1><a href="/">Труханов блог</a></h1>
+            
+        </div>
+
+        <div id="content">
+            
+    <div class="item">
+        <div class="header">
+            <h1>Условные подзапросы в Джанго</h1>
+            <h2>Sunday, August 18, 2013 <span>&raquo;</span> <a href="/tags/">джанго</a>, <a href="/tags/">оптимизация</a>, <a href="/tags/">пайтон</a>, <a href="/tags/">программирование</a></h2>
+        </div>
+        
+        <div class="body">
+            <p>Часто к моделям в Джанго нужно дописывать вычисляемые свойства (например: <code>has_users</code>, <code>has_votes</code>, <code>articles_count</code>, <code>avg_price</code> и т.д.). Как правило эти свойства вычисляются по какому-либо условию на основании полей модели или зависимых моделей, которые можно подтянуть с помощью <code>select_related</code> и это не приведет к увеличению числа запросов к базе данных. Но иногда необходимо вычислять такие свойства на основании данных из обратных связей (см. <a href="https://docs.djangoproject.com/en/1.5/ref/models/relations/#django.db.models.fields.related.RelatedManager">RelatedManager</a>). В таких случаях простой способ с написанием дополнительных методов к модели может привести к линейному увеличению запросов к базе пропорционально увеличению количества объектов этой модели на странице.</p>
+
+<p>К сожалению Джанго пока не предоставляет возможности через <a href="http://ru.wikipedia.org/wiki/ORM">ORM</a> получить дополнительное поле, вычисляемое на основании проверки условия. <a href="https://code.djangoproject.com/ticket/11305">Запрос (ticket 11305)</a> на подобный функционал висит в багтрекере Джанго, но неизвестно когда он попадет в основную ветку разработки. В общем случае проблему условных свойств можно решить несколькими способами.</p>
+<h3>Способ 1. Использование отдельных запросов для каждого объекта.</h3>
+<p>Этот способ заключается в написании дополнительного метода для модели, в котором используется <code>RelatedManager</code>, фильтруется связанная модель и вычисляется агрегированное значение. Как уже говорилось выше, этот способ прост в реализации, но абсолютно неэффективен с точки зрения количества запросов к базе данных.</p>
+<h3>Способ 2. Использование одного отдельного запроса.</h3>
+<p>В этом способе выполняется один отдельный запрос на получение данных для всех объектов модели, после чего нужно присвоить результаты этого запроса для каждого объекта модели в цикле вручную. Здесь делается всего один дополнительный запрос к БД, но реализация выглядит ужасно (приходится проходить циклом по списку объектов и вручную присваивать объектам модели нужные поля). Кроме того этот подход плохо работает с пагинацией, так как кроме основного списка объектов нужно еще и пагинировать список дополнительных полей, полученных отдельным запросом.</p>
+<h3>Способ 3. Использование приложения <a href="https://github.com/henriquebastos/django-aggregate-if/">django-aggregate-if</a></h3>
+<p>Самый простой способ. Для получения необходимого функционала, достаточно установить приложение <a href="https://github.com/henriquebastos/django-aggregate-if/">django-aggregate-if</a>, которое реализует предложенное решение в <a href="https://code.djangoproject.com/ticket/11305">ticket 11305</a> и использовать агрегирующие функции из модуля <code>aggregate_if</code>. Рассмотрим на примере моделей из <a href="https://docs.djangoproject.com/en/1.5/intro/tutorial01/">Django Tutorial</a>:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19</pre></div></td><td class="code"><div class="highlight"><pre><span class="c"># models.py</span>
+<span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+
+
+<span class="k">class</span> <span class="nc">Poll</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">question</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+    <span class="n">pub_date</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">DateTimeField</span><span class="p">(</span><span class="s">&#39;date published&#39;</span><span class="p">,</span> <span class="n">auto_now_add</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">question</span>
+
+
+<span class="k">class</span> <span class="nc">Choice</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">poll</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Poll</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s">&#39;choices&#39;</span><span class="p">)</span>
+    <span class="n">choice_text</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+    <span class="n">votes</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">choice_text</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>Предположим, что нам нужно на странице списка опросов выводить информацию о том популярен ли опрос или нет. Причем популярность будет считать следующим образом: опрос является популярным, если хотя бы один из вариантов ответа набрал больше трех голосов (понятно что в реальном проекте скорее всего это будет считаться по-другому, но для примера условимся так). Тогда файл представлений (<code>views.py</code>) будет выглядеть следующим образом:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15</pre></div></td><td class="code"><div class="highlight"><pre><span class="c"># views.py</span>
+<span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">ListView</span>
+<span class="kn">from</span> <span class="nn">django.db.models</span> <span class="kn">import</span> <span class="n">Q</span>
+
+<span class="kn">from</span> <span class="nn">aggregate_if</span> <span class="kn">import</span> <span class="n">Count</span>
+
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Poll</span>
+
+
+<span class="k">class</span> <span class="nc">PollListView</span><span class="p">(</span><span class="n">ListView</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Poll</span>
+
+    <span class="k">def</span> <span class="nf">get_queryset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">qs</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">PollListView</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">get_queryset</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">qs</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">is_popular</span><span class="o">=</span><span class="n">Count</span><span class="p">(</span><span class="s">&#39;choices&#39;</span><span class="p">,</span> <span class="n">only</span><span class="o">=</span><span class="n">Q</span><span class="p">(</span><span class="n">choices__votes__gt</span><span class="o">=</span><span class="mi">3</span><span class="p">)))</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>С помощью этого кода каждому объекту модели <code>Poll</code> будет добавлено поле <code>is_popular</code>, которое по факту будет целочисленным, но использовать его можно и как булевое. Тогда в шаблоне можно помечать популярные опросы например так:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3</pre></div></td><td class="code"><div class="highlight"><pre><span class="cp">{%</span> <span class="k">for</span> <span class="nv">poll</span> <span class="k">in</span> <span class="nv">poll_list</span> <span class="cp">%}</span><span class="x"></span>
+<span class="x">    &lt;p&gt;</span><span class="cp">{{</span> <span class="nv">poll</span> <span class="cp">}}</span><span class="x"> </span><span class="cp">{%</span> <span class="k">if</span> <span class="nv">poll.is_popular</span> <span class="cp">%}</span><span class="x">(Popular)</span><span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span><span class="x">&lt;/p&gt;</span>
+<span class="cp">{%</span> <span class="k">endfor</span> <span class="cp">%}</span><span class="x"></span>
+</pre></div>
+</td></tr></table></div></div>
+<p>В таком случае на странице будет только один запрос, а выглядеть он будет примерно так:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9</pre></div></td><td class="code"><div class="highlight"><pre><span class="k">SELECT</span> <span class="ss">&quot;polls_poll&quot;</span><span class="p">.</span><span class="ss">&quot;id&quot;</span><span class="p">,</span>
+       <span class="ss">&quot;polls_poll&quot;</span><span class="p">.</span><span class="ss">&quot;question&quot;</span><span class="p">,</span>
+       <span class="ss">&quot;polls_poll&quot;</span><span class="p">.</span><span class="ss">&quot;pub_date&quot;</span><span class="p">,</span>
+       <span class="k">COUNT</span><span class="p">(</span><span class="k">CASE</span> <span class="k">WHEN</span> <span class="ss">&quot;polls_choice&quot;</span><span class="p">.</span><span class="ss">&quot;votes&quot;</span> <span class="o">&gt;</span> <span class="mi">3</span>
+                  <span class="k">THEN</span> <span class="ss">&quot;polls_choice&quot;</span><span class="p">.</span><span class="ss">&quot;id&quot;</span>
+                  <span class="k">ELSE</span> <span class="k">null</span> <span class="k">END</span><span class="p">)</span> <span class="k">AS</span> <span class="ss">&quot;is_popular&quot;</span>
+<span class="k">FROM</span> <span class="ss">&quot;polls_poll&quot;</span> <span class="k">LEFT</span> <span class="k">OUTER</span> <span class="k">JOIN</span> <span class="ss">&quot;polls_choice&quot;</span>
+<span class="k">ON</span> <span class="p">(</span><span class="ss">&quot;polls_poll&quot;</span><span class="p">.</span><span class="ss">&quot;id&quot;</span> <span class="o">=</span> <span class="ss">&quot;polls_choice&quot;</span><span class="p">.</span><span class="ss">&quot;poll_id&quot;</span><span class="p">)</span>
+<span class="k">GROUP</span> <span class="k">BY</span> <span class="ss">&quot;polls_poll&quot;</span><span class="p">.</span><span class="ss">&quot;id&quot;</span><span class="p">,</span> <span class="ss">&quot;polls_poll&quot;</span><span class="p">.</span><span class="ss">&quot;question&quot;</span><span class="p">,</span> <span class="ss">&quot;polls_poll&quot;</span><span class="p">.</span><span class="ss">&quot;pub_date&quot;</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>В зависимостях этого приложения указано, что оно требует <code>Django&lt;1.5</code>. Я попробовал его использовать вместе с <code>Django==1.5</code> - оно работает, но во время выполнения запросов вываливается <code>DeprecationWarning</code>.</p>
+<h3>Способ 4. Дополнение основного запроса подзапросом с условием при помощи метода <a href="https://docs.djangoproject.com/en/1.5/ref/models/querysets/#extra">extra</a></h3>
+<p>Ну и наконец третий способ. Как известно, в документации Джанго не рекомендуют использовать <a href="https://docs.djangoproject.com/en/1.5/ref/models/querysets/#extra">extra</a> и <a href="https://docs.djangoproject.com/en/1.5/topics/db/sql/">raw</a> методы, но как будет видно дальше в подобных запросах не используется какой-то специфический синтаксис, который будет отличаться в разных базах данных. Кроме того смена базы данных - редкая необходимость. Поэтому рассмотрим и этот способ тоже. Модели и шаблоны остаются такими же, меняется только запрос к базе данных:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15</pre></div></td><td class="code"><div class="highlight"><pre><span class="c"># views.py</span>
+<span class="kn">from</span> <span class="nn">django.views.generic</span> <span class="kn">import</span> <span class="n">ListView</span>
+
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Poll</span>
+
+
+<span class="k">class</span> <span class="nc">PollListView</span><span class="p">(</span><span class="n">ListView</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Poll</span>
+
+    <span class="k">def</span> <span class="nf">get_queryset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">qs</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">PollListView</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">get_queryset</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">qs</span><span class="o">.</span><span class="n">extra</span><span class="p">(</span><span class="n">select</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;is_popular&#39;</span><span class="p">:</span> <span class="s">&#39;SELECT COUNT(*) FROM &quot;polls_choice&quot; &#39;</span>
+                                              <span class="s">&#39;WHERE &quot;polls_choice&quot;.&quot;poll_id&quot; = &quot;polls_poll&quot;.&quot;id&quot; &#39;</span>
+                                              <span class="s">&#39;AND &quot;polls_choice&quot;.&quot;votes&quot; &gt; </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">},</span>
+                        <span class="n">select_params</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>Следует отметить, что все подстановки нужно делать через специальный аргумент: <code>select_params</code>, а самом запросе вставлять <code>%s</code> для указания места подставновки. Таким образом драйвер базы данных экранирует эти параметры, что позволяет избежать <a href="http://ru.wikipedia.org/wiki/%D0%92%D0%BD%D0%B5%D0%B4%D1%80%D0%B5%D0%BD%D0%B8%D0%B5_SQL-%D0%BA%D0%BE%D0%B4%D0%B0">SQL-инъекций</a>. Результирующий запрос будет выглядеть следующим образом:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5
+6
+7</pre></div></td><td class="code"><div class="highlight"><pre><span class="k">SELECT</span> <span class="ss">&quot;polls_poll&quot;</span><span class="p">.</span><span class="ss">&quot;id&quot;</span><span class="p">,</span>
+       <span class="ss">&quot;polls_poll&quot;</span><span class="p">.</span><span class="ss">&quot;question&quot;</span><span class="p">,</span>
+       <span class="ss">&quot;polls_poll&quot;</span><span class="p">.</span><span class="ss">&quot;pub_date&quot;</span><span class="p">,</span>
+       <span class="p">(</span><span class="k">SELECT</span> <span class="k">COUNT</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> <span class="k">FROM</span> <span class="ss">&quot;polls_choice&quot;</span>
+                        <span class="k">WHERE</span> <span class="ss">&quot;polls_choice&quot;</span><span class="p">.</span><span class="ss">&quot;poll_id&quot;</span> <span class="o">=</span> <span class="ss">&quot;polls_poll&quot;</span><span class="p">.</span><span class="ss">&quot;id&quot;</span>
+                        <span class="k">AND</span> <span class="ss">&quot;polls_choice&quot;</span><span class="p">.</span><span class="ss">&quot;votes&quot;</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">)</span> <span class="k">AS</span> <span class="ss">&quot;is_popular&quot;</span>
+<span class="k">FROM</span> <span class="ss">&quot;polls_poll&quot;</span>
+</pre></div>
+</td></tr></table></div></div><h2>Выводы</h2>
+<p>Условные подзапросы можно использовать не только для вычисления булевого поля как показано в примерах. Также можно добавлять любые агрегированные поля с условием(ями). Можно использовать стандартные операторы агрегации, такие как: COUNT, SUM, AVG и т.д.</p>
+
+<p>Надеюсь что в скором времени в Джанго добавят возможность выполнять условные подзапросы при помощи ORM. Пока же приходится либо жертвовать производительностью либо писать не очень красивый код.</p>
+
+        </div>
+    </div>
+
+        </div>
+
+        <div id="footer">
+        <p style="float: right; margin-top: 0px;"><a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.ru"><img alt="Лицензия Creative Commons" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/80x15.png" /></a></p><p>Copyright &copy; 2013 Timofey Trukhanov &ndash; powered by <a href="http://mynt.mirroredwhite.com/">mynt</a></p>
+        </div>
+    </div>
+</body>
+</html>

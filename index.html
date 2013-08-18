@@ -20,7 +20,7 @@
         var _gaq = _gaq || [];
         _gaq.push(['_setAccount', 'UA-41614976-1']);
         _gaq.push(['_trackPageview']);
-        
+
         (function() {
             var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
             ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
@@ -62,6 +62,22 @@
 
         <div id="content">
             
+    
+        
+        <div class="item">
+            <div class="header">
+                <h1><a href="/Uslovnye-podzaprosy-v-Django/">Условные подзапросы в Джанго</a></h1>
+                <h2>Sunday, August 18, 2013 <span>&raquo;</span> <a href="/tags/">джанго</a>, <a href="/tags/">оптимизация</a>, <a href="/tags/">пайтон</a>, <a href="/tags/">программирование</a></h2>
+            </div>
+            
+            <div class="body">
+                <p>Часто к моделям в Джанго нужно дописывать вычисляемые свойства (например: <code>has_users</code>, <code>has_votes</code>, <code>articles_count</code>, <code>avg_price</code> и т.д.). Как правило эти свойства вычисляются по какому-либо условию на основании полей модели или зависимых моделей, которые можно подтянуть с помощью <code>select_related</code> и это не приведет к увеличению числа запросов к базе данных. Но иногда необходимо вычислять такие свойства на основании данных из обратных связей (см. <a href="https://docs.djangoproject.com/en/1.5/ref/models/relations/#django.db.models.fields.related.RelatedManager">RelatedManager</a>). В таких случаях простой способ с написанием дополнительных методов к модели может привести к линейному увеличению запросов к базе пропорционально увеличению количества объектов этой модели на странице.</p>
+            </div>
+            
+            <div class="footer">
+                <p><a href="/Uslovnye-podzaprosy-v-Django/">Continue Reading</a></p>
+            </div>
+        </div>
     
         
         <div class="item">
