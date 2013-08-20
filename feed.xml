@@ -6,7 +6,7 @@
         <link rel="alternate" href="http://blog.trukhanov.net/" />
         <link rel="self" href="http://blog.trukhanov.net/feed.xml" type="application/atom+xml" />
         <id>http://blog.trukhanov.net/</id>
-        <updated>2013-08-18T20:09:46Z</updated>
+        <updated>2013-08-20T19:44:37Z</updated>
         
         <author>
             <name>Timofey Trukhanov</name>
@@ -19,7 +19,7 @@
                 <title>Условные подзапросы в Джанго</title>
                 <link rel="alternate" href="http://blog.trukhanov.net/Uslovnye-podzaprosy-v-Django/" type="text/html" />
                 <id>http://blog.trukhanov.net/Uslovnye-podzaprosy-v-Django/</id>
-                <updated>2013-08-18T20:09:00Z</updated>
+                <updated>2013-08-18T19:44:00Z</updated>
                 
                 <summary type="html">Часто к моделям в Джанго нужно дописывать вычисляемые свойства (например: &lt;code&gt;has_users&lt;/code&gt;, &lt;code&gt;has_votes&lt;/code&gt;, &lt;code&gt;articles_count&lt;/code&gt;, &lt;code&gt;avg_price&lt;/code&gt; и т.д.). Как правило эти свойства вычисляются по какому-либо условию на основании полей модели или зависимых моделей, которые можно подтянуть с помощью &lt;code&gt;select_related&lt;/code&gt; и это не приведет к увеличению числа запросов к базе данных. Но иногда необходимо вычислять такие свойства на основании данных из обратных связей (см. &lt;a href=&#34;https://docs.djangoproject.com/en/1.5/ref/models/relations/#django.db.models.fields.related.RelatedManager&#34;&gt;RelatedManager&lt;/a&gt;). В таких случаях простой способ с написанием дополнительных методов к модели может привести к линейному увеличению запросов к базе пропорционально увеличению количества объектов этой модели на странице.</summary>
                 <content type="html">&lt;p&gt;Часто к моделям в Джанго нужно дописывать вычисляемые свойства (например: &lt;code&gt;has_users&lt;/code&gt;, &lt;code&gt;has_votes&lt;/code&gt;, &lt;code&gt;articles_count&lt;/code&gt;, &lt;code&gt;avg_price&lt;/code&gt; и т.д.). Как правило эти свойства вычисляются по какому-либо условию на основании полей модели или зависимых моделей, которые можно подтянуть с помощью &lt;code&gt;select_related&lt;/code&gt; и это не приведет к увеличению числа запросов к базе данных. Но иногда необходимо вычислять такие свойства на основании данных из обратных связей (см. &lt;a href=&#34;https://docs.djangoproject.com/en/1.5/ref/models/relations/#django.db.models.fields.related.RelatedManager&#34;&gt;RelatedManager&lt;/a&gt;). В таких случаях простой способ с написанием дополнительных методов к модели может привести к линейному увеличению запросов к базе пропорционально увеличению количества объектов этой модели на странице.&lt;/p&gt;
@@ -51,7 +51,7 @@ class Choice(models.Model):
     def __str__(self):
         return self.choice_text
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Предположим, что нам нужно на странице списка опросов выводить информацию о том популярен ли опрос или нет. Причем популярность будет считать следующим образом: опрос является популярным, если хотя бы один из вариантов ответа набрал больше трех голосов (понятно что в реальном проекте скорее всего это будет считаться по-другому, но для примера условимся так). Тогда файл представлений (&lt;code&gt;views.py&lt;/code&gt;) будет выглядеть следующим образом:&lt;/p&gt;
+&lt;p&gt;Предположим, что нам нужно на странице списка опросов выводить информацию о том популярен ли опрос или нет. Причем популярность будем считать следующим образом: опрос является популярным, если хотя бы один из вариантов ответа набрал больше трех голосов (понятно что в реальном проекте скорее всего это будет считаться по-другому, но для примера условимся так). Тогда файл представлений (&lt;code&gt;views.py&lt;/code&gt;) будет выглядеть следующим образом:&lt;/p&gt;
 &lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;# views.py
 from django.views.generic import ListView
 from django.db.models import Q
@@ -86,7 +86,7 @@ GROUP BY &amp;quot;polls_poll&amp;quot;.&amp;quot;id&amp;quot;, &amp;quot;polls_
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;В зависимостях этого приложения указано, что оно требует &lt;code&gt;Django&amp;lt;1.5&lt;/code&gt;. Я попробовал его использовать вместе с &lt;code&gt;Django==1.5&lt;/code&gt; - оно работает, но во время выполнения запросов вываливается &lt;code&gt;DeprecationWarning&lt;/code&gt;.&lt;/p&gt;
 &lt;h3&gt;Способ 4. Дополнение основного запроса подзапросом с условием при помощи метода &lt;a href=&#34;https://docs.djangoproject.com/en/1.5/ref/models/querysets/#extra&#34;&gt;extra&lt;/a&gt;&lt;/h3&gt;
-&lt;p&gt;Ну и наконец третий способ. Как известно, в документации Джанго не рекомендуют использовать &lt;a href=&#34;https://docs.djangoproject.com/en/1.5/ref/models/querysets/#extra&#34;&gt;extra&lt;/a&gt; и &lt;a href=&#34;https://docs.djangoproject.com/en/1.5/topics/db/sql/&#34;&gt;raw&lt;/a&gt; методы, но как будет видно дальше в подобных запросах не используется какой-то специфический синтаксис, который будет отличаться в разных базах данных. Кроме того смена базы данных - редкая необходимость. Поэтому рассмотрим и этот способ тоже. Модели и шаблоны остаются такими же, меняется только запрос к базе данных:&lt;/p&gt;
+&lt;p&gt;Ну и наконец четвертый способ. Как известно, в документации Джанго не рекомендуют использовать &lt;a href=&#34;https://docs.djangoproject.com/en/1.5/ref/models/querysets/#extra&#34;&gt;extra&lt;/a&gt; и &lt;a href=&#34;https://docs.djangoproject.com/en/1.5/topics/db/sql/&#34;&gt;raw&lt;/a&gt; методы, но как будет видно дальше в подобных запросах не используется какой-то специфический синтаксис, который будет отличаться в разных базах данных. Кроме того смена базы данных - редкая необходимость. Поэтому рассмотрим и этот способ тоже. Модели и шаблоны остаются такими же, меняется только запрос к базе данных:&lt;/p&gt;
 &lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;# views.py
 from django.views.generic import ListView
 
@@ -112,7 +112,7 @@ class PollListView(ListView):
                         AND &amp;quot;polls_choice&amp;quot;.&amp;quot;votes&amp;quot; &amp;gt; 3) AS &amp;quot;is_popular&amp;quot;
 FROM &amp;quot;polls_poll&amp;quot;
 &lt;/code&gt;&lt;/pre&gt;&lt;h2&gt;Выводы&lt;/h2&gt;
-&lt;p&gt;Условные подзапросы можно использовать не только для вычисления булевого поля как показано в примерах. Также можно добавлять любые агрегированные поля с условием(ями). Можно использовать стандартные операторы агрегации, такие как: COUNT, SUM, AVG и т.д.&lt;/p&gt;
+&lt;p&gt;Условные подзапросы можно использовать не только для вычисления булевых полей как показано в примерах. Также можно добавлять любые агрегированные поля с условием(ями). Можно использовать стандартные операторы агрегации, такие как: COUNT, SUM, AVG и т.д.&lt;/p&gt;
 
 &lt;p&gt;Надеюсь что в скором времени в Джанго добавят возможность выполнять условные подзапросы при помощи ORM. Пока же приходится либо жертвовать производительностью либо писать не очень красивый код.&lt;/p&gt;
 </content>
