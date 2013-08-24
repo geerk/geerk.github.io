@@ -6,7 +6,7 @@
         <link rel="alternate" href="http://blog.trukhanov.net/" />
         <link rel="self" href="http://blog.trukhanov.net/feed.xml" type="application/atom+xml" />
         <id>http://blog.trukhanov.net/</id>
-        <updated>2013-08-20T19:44:37Z</updated>
+        <updated>2013-08-24T13:46:51Z</updated>
         
         <author>
             <name>Timofey Trukhanov</name>
@@ -14,6 +14,58 @@
             <uri>http://blog.trukhanov.net/</uri>
         </author>
         
+        
+            <entry>
+                <title>Кеширование методов и функций между запросами в джанго</title>
+                <link rel="alternate" href="http://blog.trukhanov.net/Keshirovaniye-metodov-i-funktsiy-mezhdu-zaprosami-v-Dzhango/" type="text/html" />
+                <id>http://blog.trukhanov.net/Keshirovaniye-metodov-i-funktsiy-mezhdu-zaprosami-v-Dzhango/</id>
+                <updated>2013-08-24T13:45:00Z</updated>
+                
+                <summary type="html">Ранее, в &lt;a href=&#34;http://blog.trukhanov.net/Keshirovanie-metodov-modeli-v-Django/&#34;&gt;одном&lt;/a&gt; из предыдущих постов, я рассказывал о том как кешировать результаты выполнения запросов в методах моделей в пределах одного запроса веб-страницы. В этом же посте я расскажу как можно кешировать результаты выполнения функций или методов на более длительный период времени.</summary>
+                <content type="html">&lt;p&gt;Ранее, в &lt;a href=&#34;http://blog.trukhanov.net/Keshirovanie-metodov-modeli-v-Django/&#34;&gt;одном&lt;/a&gt; из предыдущих постов, я рассказывал о том как кешировать результаты выполнения запросов в методах моделей в пределах одного запроса веб-страницы. В этом же посте я расскажу как можно кешировать результаты выполнения функций или методов на более длительный период времени.&lt;/p&gt;
+
+&lt;p&gt;В джанго &lt;a href=&#34;https://docs.djangoproject.com/en/1.5/topics/cache/#django-s-cache-framework&#34;&gt;доступно&lt;/a&gt; четыре способа кеширования. С помощью них можно кешировать:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Весь сайт&lt;/li&gt;
+&lt;li&gt;Целые страницы&lt;/li&gt;
+&lt;li&gt;Отдельные части шаблонов&lt;/li&gt;
+&lt;li&gt;Что угодно, вручную управляя кешем&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Если есть возможность, лучше использовать первые три способа кеширования, т.к. они позволяют наиболее удобно и эффективно кешировать большой объем информации. Но в крайнем случае можно использовать и четвертый способ, чем мы сейчас и займемся.&lt;/p&gt;
+
+&lt;p&gt;Итак, для кеширования функций, я написал простенький декоратор, который использует &lt;a href=&#34;https://docs.djangoproject.com/en/1.5/topics/cache/#the-low-level-cache-api&#34;&gt;ручной интерфейс&lt;/a&gt; кеширования в джанго. Однако для начала нужно сгенерировать ключ кеширования из входных аргументов функции. В предложенной реализации я использую встроенную функцию &lt;a href=&#34;http://docs.python.org/2/library/functions.html#hash&#34;&gt;hash&lt;/a&gt;, которая используется для быстрого сравнения ключей в словарях. Вместо нее можно также взять функцию md5-хеширования из стандартной библиотеки &lt;a href=&#34;http://docs.python.org/2/library/hashlib.html&#34;&gt;hashlib&lt;/a&gt;, что и делает джанго для генерирования ключей кеширования в первых трех способах. Особенностью функции &lt;code&gt;hash&lt;/code&gt; является то, что она вычисляет хеш только по неизменяемым структурам данных (&lt;code&gt;int&lt;/code&gt;, &lt;code&gt;str&lt;/code&gt;, &lt;code&gt;tuple&lt;/code&gt; и т.д.).&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;def get_cache_key(prefix, *args, **kwargs):
+    hash_args_kwargs = hash(tuple(kwargs.iteritems()) + args)
+    return &amp;#x27;{}_{}&amp;#x27;.format(prefix, hash_args_kwargs)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Так как &lt;code&gt;kwargs&lt;/code&gt; приходят в виде словаря, приходится преобразовывать их в &lt;code&gt;tuple&lt;/code&gt;, &lt;code&gt;args&lt;/code&gt; приходят уже в виде &lt;code&gt;tuple&lt;/code&gt;, поэтому в преобразовании нет необходимости. Следует заметить, что аргументами такой функции могут быть только хешируемые типы данных (из-за ограничений функции &lt;code&gt;hash&lt;/code&gt;).&lt;/p&gt;
+
+&lt;p&gt;Префикс нужен в том случае, если вы хотите именовать начало кеш-ключей для читаемости и уменьшения вероятности совпадения ключей при одинаковых аргументах различных функций. По умолчанию в качестве префикса используется имя функции.&lt;/p&gt;
+
+&lt;p&gt;Сам же кеширующий декоратор выглядит следующим образом:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;from functools import wraps
+
+from django.core.cache import cache
+
+
+def cache_func(func, timeout=500, prefix=&amp;#x27;&amp;#x27;):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        cache_key = get_cache_key(prefix or func.__name__, *args, **kwargs)
+        cached_value = cache.get(cache_key)
+        if cached_value is None:
+            cached_value = func(*args, **kwargs)
+            cache.set(cache_key, cached_value, timeout)
+        return cached_value
+    return wrapper
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Сначала на основе аргументов функции вычисляется ключ кеширования, потом проверяется наличие в кеше записи с таким ключом. Если такой записи нет, то вызывается функция и результат записывается в кеш. При последующих вызовах этой функции она уже не будет вызываться, вместо этого результат выполнения этот функции будет браться из кеша. Этот декоратор также можно применять и к методам классов при помощи другого декоратора: &lt;a href=&#34;https://docs.djangoproject.com/en/1.5/ref/utils/#django.utils.decorators.method_decorator&#34;&gt;&lt;code&gt;method_decorator&lt;/code&gt;&lt;/a&gt; из стандартной поставки джанго.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;P.S.&lt;/em&gt;: В третьем пайтоне есть похожий декоратор для кеширования результатов выполенния функций, но хранящий данные в обычном словаре в оперативной памяти: &lt;a href=&#34;http://docs.python.org/3.3/library/functools.html#functools.lru_cache&#34;&gt;lru_cache&lt;/a&gt;.&lt;/p&gt;
+</content>
+            </entry>
         
             <entry>
                 <title>Условные подзапросы в Джанго</title>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="author" content="Timofey Trukhanov">
+<meta name="description" content="Персональный блог Тимофея Труханова">
+<meta name="generator" content="mynt v0.2.3">
+
+<link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon">
+
+<link rel="alternate" href="/feed.xml" type="application/atom+xml">
+
+<link rel="stylesheet" href="/assets/css/screen.css" type="text/css">
+<link rel="stylesheet" href="/assets/css/pygments.css" type="text/css">
+
+
+    <script type="text/javascript">
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-41614976-1']);
+        _gaq.push(['_trackPageview']);
+
+        (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
+
+
+    <title>Кеширование методов и функций между запросами в джанго &ndash; Труханов блог</title>
+</head>
+
+<body>
+    <div id="container">
+        <div id="nav">
+            <ul>
+                <li><a href="/">Blog</a></li>
+                <li><a href="/archives/">Archives</a></li>
+                <li><a href="/feed.xml">Feed</a></li>
+            </ul>
+                <ul id="social">
+            
+                    
+                    
+                    <li><a href="https://github.com/geerk"><img src="/assets/images/social/github.png" width="16" height="16" alt="GitHub"></a></li>
+                    
+                    
+                    
+                    
+                    <li><a href="https://twitter.com/#!/geerk"><img src="/assets/images/social/twitter.png" width="16" height="16" alt="Twitter"></a></li>
+            
+                    <li><a href="http://masters.donntu.edu.ua/2013/fknt/trukhanov/">ДонНТУ</a></li>
+                </ul>
+        </div>
+
+        <div id="header">
+            <h1><a href="/">Труханов блог</a></h1>
+            
+        </div>
+
+        <div id="content">
+            
+    <div class="item">
+        <div class="header">
+            <h1>Кеширование методов и функций между запросами в джанго</h1>
+            <h2>Saturday, August 24, 2013 <span>&raquo;</span> <a href="/tags/">джанго</a>, <a href="/tags/">кеширование</a>, <a href="/tags/">оптимизация</a>, <a href="/tags/">пайтон</a>, <a href="/tags/">программирование</a></h2>
+        </div>
+        
+        <div class="body">
+            <p>Ранее, в <a href="/Keshirovanie-metodov-modeli-v-Django/">одном</a> из предыдущих постов, я рассказывал о том как кешировать результаты выполнения запросов в методах моделей в пределах одного запроса веб-страницы. В этом же посте я расскажу как можно кешировать результаты выполнения функций или методов на более длительный период времени.</p>
+
+<p>В джанго <a href="https://docs.djangoproject.com/en/1.5/topics/cache/#django-s-cache-framework">доступно</a> четыре способа кеширования. С помощью них можно кешировать:</p>
+
+<ol>
+<li>Весь сайт</li>
+<li>Целые страницы</li>
+<li>Отдельные части шаблонов</li>
+<li>Что угодно, вручную управляя кешем</li>
+</ol>
+
+<p>Если есть возможность, лучше использовать первые три способа кеширования, т.к. они позволяют наиболее удобно и эффективно кешировать большой объем информации. Но в крайнем случае можно использовать и четвертый способ, чем мы сейчас и займемся.</p>
+
+<p>Итак, для кеширования функций, я написал простенький декоратор, который использует <a href="https://docs.djangoproject.com/en/1.5/topics/cache/#the-low-level-cache-api">ручной интерфейс</a> кеширования в джанго. Однако для начала нужно сгенерировать ключ кеширования из входных аргументов функции. В предложенной реализации я использую встроенную функцию <a href="http://docs.python.org/2/library/functions.html#hash">hash</a>, которая используется для быстрого сравнения ключей в словарях. Вместо нее можно также взять функцию md5-хеширования из стандартной библиотеки <a href="http://docs.python.org/2/library/hashlib.html">hashlib</a>, что и делает джанго для генерирования ключей кеширования в первых трех способах. Особенностью функции <code>hash</code> является то, что она вычисляет хеш только по неизменяемым структурам данных (<code>int</code>, <code>str</code>, <code>tuple</code> и т.д.).</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3</pre></div></td><td class="code"><div class="highlight"><pre><span class="k">def</span> <span class="nf">get_cache_key</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">hash_args_kwargs</span> <span class="o">=</span> <span class="nb">hash</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">iteritems</span><span class="p">())</span> <span class="o">+</span> <span class="n">args</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s">&#39;{}_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">hash_args_kwargs</span><span class="p">)</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>Так как <code>kwargs</code> приходят в виде словаря, приходится преобразовывать их в <code>tuple</code>, <code>args</code> приходят уже в виде <code>tuple</code>, поэтому в преобразовании нет необходимости. Следует заметить, что аргументами такой функции могут быть только хешируемые типы данных (из-за ограничений функции <code>hash</code>).</p>
+
+<p>Префикс нужен в том случае, если вы хотите именовать начало кеш-ключей для читаемости и уменьшения вероятности совпадения ключей при одинаковых аргументах различных функций. По умолчанию в качестве префикса используется имя функции.</p>
+
+<p>Сам же кеширующий декоратор выглядит следующим образом:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15</pre></div></td><td class="code"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+
+<span class="kn">from</span> <span class="nn">django.core.cache</span> <span class="kn">import</span> <span class="n">cache</span>
+
+
+<span class="k">def</span> <span class="nf">cache_func</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">cache_key</span> <span class="o">=</span> <span class="n">get_cache_key</span><span class="p">(</span><span class="n">prefix</span> <span class="ow">or</span> <span class="n">func</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">cached_value</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cache_key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cached_value</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">cached_value</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">cache_key</span><span class="p">,</span> <span class="n">cached_value</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cached_value</span>
+    <span class="k">return</span> <span class="n">wrapper</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>Сначала на основе аргументов функции вычисляется ключ кеширования, потом проверяется наличие в кеше записи с таким ключом. Если такой записи нет, то вызывается функция и результат записывается в кеш. При последующих вызовах этой функции она уже не будет вызываться, вместо этого результат выполнения этот функции будет браться из кеша. Этот декоратор также можно применять и к методам классов при помощи другого декоратора: <a href="https://docs.djangoproject.com/en/1.5/ref/utils/#django.utils.decorators.method_decorator"><code>method_decorator</code></a> из стандартной поставки джанго.</p>
+
+<p><em>P.S.</em>: В третьем пайтоне есть похожий декоратор для кеширования результатов выполенния функций, но хранящий данные в обычном словаре в оперативной памяти: <a href="http://docs.python.org/3.3/library/functools.html#functools.lru_cache">lru_cache</a>.</p>
+
+        </div>
+    </div>
+
+        </div>
+
+        <div id="footer">
+        <p style="float: right; margin-top: 0px;"><a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.ru"><img alt="Лицензия Creative Commons" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/80x15.png" /></a></p><p>Copyright &copy; 2013 Timofey Trukhanov &ndash; powered by <a href="http://mynt.mirroredwhite.com/">mynt</a></p>
+        </div>
+    </div>
+</body>
+</html>
