@@ -6,7 +6,7 @@
         <link rel="alternate" href="http://blog.trukhanov.net/" />
         <link rel="self" href="http://blog.trukhanov.net/feed.xml" type="application/atom+xml" />
         <id>http://blog.trukhanov.net/</id>
-        <updated>2013-08-24T13:46:51Z</updated>
+        <updated>2013-08-25T07:51:40Z</updated>
         
         <author>
             <name>Timofey Trukhanov</name>
@@ -19,7 +19,7 @@
                 <title>Кеширование методов и функций между запросами в джанго</title>
                 <link rel="alternate" href="http://blog.trukhanov.net/Keshirovaniye-metodov-i-funktsiy-mezhdu-zaprosami-v-Dzhango/" type="text/html" />
                 <id>http://blog.trukhanov.net/Keshirovaniye-metodov-i-funktsiy-mezhdu-zaprosami-v-Dzhango/</id>
-                <updated>2013-08-24T13:45:00Z</updated>
+                <updated>2013-08-24T07:51:00Z</updated>
                 
                 <summary type="html">Ранее, в &lt;a href=&#34;http://blog.trukhanov.net/Keshirovanie-metodov-modeli-v-Django/&#34;&gt;одном&lt;/a&gt; из предыдущих постов, я рассказывал о том как кешировать результаты выполнения запросов в методах моделей в пределах одного запроса веб-страницы. В этом же посте я расскажу как можно кешировать результаты выполнения функций или методов на более длительный период времени.</summary>
                 <content type="html">&lt;p&gt;Ранее, в &lt;a href=&#34;http://blog.trukhanov.net/Keshirovanie-metodov-modeli-v-Django/&#34;&gt;одном&lt;/a&gt; из предыдущих постов, я рассказывал о том как кешировать результаты выполнения запросов в методах моделей в пределах одного запроса веб-страницы. В этом же посте я расскажу как можно кешировать результаты выполнения функций или методов на более длительный период времени.&lt;/p&gt;
@@ -61,7 +61,9 @@ def cache_func(func, timeout=500, prefix=&amp;#x27;&amp;#x27;):
         return cached_value
     return wrapper
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Сначала на основе аргументов функции вычисляется ключ кеширования, потом проверяется наличие в кеше записи с таким ключом. Если такой записи нет, то вызывается функция и результат записывается в кеш. При последующих вызовах этой функции она уже не будет вызываться, вместо этого результат выполнения этот функции будет браться из кеша. Этот декоратор также можно применять и к методам классов при помощи другого декоратора: &lt;a href=&#34;https://docs.djangoproject.com/en/1.5/ref/utils/#django.utils.decorators.method_decorator&#34;&gt;&lt;code&gt;method_decorator&lt;/code&gt;&lt;/a&gt; из стандартной поставки джанго.&lt;/p&gt;
+&lt;p&gt;Сначала на основе аргументов функции вычисляется ключ кеширования, потом проверяется наличие в кеше записи с таким ключом. Если такой записи нет, то вызывается функция и результат записывается в кеш. При последующих вызовах этой функции она уже не будет вызываться, вместо этого результат выполнения этот функции будет браться из кеша. Этот декоратор также можно применять и к методам классов при помощи другого декоратора: &lt;a href=&#34;https://docs.djangoproject.com/en/1.5/ref/utils/#django.utils.decorators.method_decorator&#34;&gt;&lt;code&gt;method_decorator&lt;/code&gt;&lt;/a&gt; из стандартной поставки джанго. Но особенностью данной реализации является то, что в случае декорирования методов не учитывается &lt;code&gt;self&lt;/code&gt;-аргумент, поэтому все параметры, влияющие на результат выполнения метода нужно передавать явно через параметры, а не через &lt;code&gt;self&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Я не просто так выделил отдельную функцию &lt;code&gt;get_cache_key&lt;/code&gt;. Эту функцию можно использовать для инвалидации кеша при необходимости. К примеру можно поставить достаточно большой таймаут для кеширования, а для актуализации кеша инвалидировать его, например, по сигналам &lt;code&gt;post_save&lt;/code&gt; и &lt;code&gt;post_delete&lt;/code&gt;. В таком случае пригодится &lt;code&gt;get_cache_key&lt;/code&gt;, потому что сначала придется составить ключ кеширования, чтобы удалить его из кеша.&lt;/p&gt;
 
 &lt;p&gt;&lt;em&gt;P.S.&lt;/em&gt;: В третьем пайтоне есть похожий декоратор для кеширования результатов выполенния функций, но хранящий данные в обычном словаре в оперативной памяти: &lt;a href=&#34;http://docs.python.org/3.3/library/functools.html#functools.lru_cache&#34;&gt;lru_cache&lt;/a&gt;.&lt;/p&gt;
 </content>
@@ -216,10 +218,10 @@ FROM &amp;quot;polls_poll&amp;quot;
             </entry>
         
             <entry>
-                <title>Кеширование методов модели в Джанго</title>
+                <title>Кеширование методов модели в Джанго в пределах одного запроса</title>
                 <link rel="alternate" href="http://blog.trukhanov.net/Keshirovanie-metodov-modeli-v-Django/" type="text/html" />
                 <id>http://blog.trukhanov.net/Keshirovanie-metodov-modeli-v-Django/</id>
-                <updated>2013-07-08T09:22:00Z</updated>
+                <updated>2013-07-08T07:19:00Z</updated>
                 
                 <summary type="html">В книге &lt;a href=&#34;http://django.2scoops.org/&#34;&gt;Two scoops of Django&lt;/a&gt; советуют всю бизнесовую логику держать в моделях. И я с этим согласен, это действительно удобно. Один из самых простых методов реализации этого совета - написание дополнительных методов в модели для добавления необходимого поведения. Эти методы потом можно использовать как в контроллерах (views) так и в представлениях (templates).</summary>
                 <content type="html">&lt;p&gt;В книге &lt;a href=&#34;http://django.2scoops.org/&#34;&gt;Two scoops of Django&lt;/a&gt; советуют всю бизнесовую логику держать в моделях. И я с этим согласен, это действительно удобно. Один из самых простых методов реализации этого совета - написание дополнительных методов в модели для добавления необходимого поведения. Эти методы потом можно использовать как в контроллерах (views) так и в представлениях (templates).&lt;/p&gt;
