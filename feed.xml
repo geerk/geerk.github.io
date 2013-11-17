@@ -6,7 +6,7 @@
         <link rel="alternate" href="http://blog.trukhanov.net/" />
         <link rel="self" href="http://blog.trukhanov.net/feed.xml" type="application/atom+xml" />
         <id>http://blog.trukhanov.net/</id>
-        <updated>2013-08-25T07:51:40Z</updated>
+        <updated>2013-11-17T15:21:41Z</updated>
         
         <author>
             <name>Timofey Trukhanov</name>
@@ -14,6 +14,42 @@
             <uri>http://blog.trukhanov.net/</uri>
         </author>
         
+        
+            <entry>
+                <title>Работа с секретными ключами и паролями</title>
+                <link rel="alternate" href="http://blog.trukhanov.net/Rabota-s-sekretnymi-kliuchami-i-paroliami/" type="text/html" />
+                <id>http://blog.trukhanov.net/Rabota-s-sekretnymi-kliuchami-i-paroliami/</id>
+                <updated>2013-11-17T15:21:00Z</updated>
+                
+                <summary type="html">Для безопасности все секретные ключи и пароли не следует напрямую хранить в файле настроек чтобы они не попали в систему контроля версий. Для этого в &lt;a href=&#34;http://django.2scoops.org/&#34;&gt;Two Scoops of Django&lt;/a&gt; предлагается использовать переменные окружения операционной системы. Перед запуском приложения все необходимые секретные ключи и пароли устанавливаются в переменные окружения, а в файле настроек прописывается загрузка этих переменных из окружения с помощью примерно такой функции:</summary>
+                <content type="html">&lt;p&gt;Для безопасности все секретные ключи и пароли не следует напрямую хранить в файле настроек чтобы они не попали в систему контроля версий. Для этого в &lt;a href=&#34;http://django.2scoops.org/&#34;&gt;Two Scoops of Django&lt;/a&gt; предлагается использовать переменные окружения операционной системы. Перед запуском приложения все необходимые секретные ключи и пароли устанавливаются в переменные окружения, а в файле настроек прописывается загрузка этих переменных из окружения с помощью примерно такой функции:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;from django.core.exceptions import ImproperlyConfigured
+
+
+def get_env_variable(var_name):
+    &amp;quot;&amp;quot;&amp;quot; Get the environment variable or return exception &amp;quot;&amp;quot;&amp;quot;
+    try:
+        return os.environ[var_name]
+    except KeyError:
+        raise ImproperlyConfigured(&amp;#x27;Set the {} environment variable&amp;#x27;.format(var_name))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;А загрузка переменных окружения выглядит следующим образом: &lt;code&gt;SECRET_KEY = get_env_variable(&amp;#39;SECRET_KEY&amp;#39;)&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Для удобства разработки можно все чувствительные переменные записать в файл &lt;code&gt;.env&lt;/code&gt;, добавить его в &lt;code&gt;.gitignore&lt;/code&gt; и воспользоваться приложением &lt;a href=&#34;https://github.com/jacobian/django-dotenv&#34;&gt;django-dotenv&lt;/a&gt;, которое при запуске будет загружать данные из файла в переменные окружения. Для этого нужно в файлы &lt;code&gt;manage.py&lt;/code&gt; (для локальной разработки) и &lt;code&gt;wsgi.py&lt;/code&gt; (для боевых серверов) следующие строки:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;import dotenv
+
+dotenv.read_dotenv(&amp;#x27;settings&amp;#x2F;.env&amp;#x27;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;В функции &lt;code&gt;dotenv.read_dotenv&lt;/code&gt; можно указать путь к файлу &lt;code&gt;.env&lt;/code&gt;.&lt;br&gt;
+Сам файл &lt;code&gt;.env&lt;/code&gt; выглядит следующим образом (все пароли вымышлены):&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;SECRET_KEY=&amp;#x27;9&amp;amp;W$5t4rtg53RTFW%$^#4535764yzems*1^scad0-k-q$-(g5d&amp;#x27;
+GOOGLE_API_KEY=&amp;#x27;VIzaSyCjZM0iuOmaWIJJvS-WDlCAVw3HfyGA5kc&amp;#x27;
+AWS_S3_ACCESS_KEY_ID=&amp;#x27;HKIAJGS3RONZ2LDHXDBA&amp;#x27;
+AWS_S3_SECRET_ACCESS_KEY=&amp;#x27;I3ID5mBMwzSE4OhGWNVbNlvK+nU6F36+5a&amp;#x2F;4CzJm&amp;#x27;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Обратите внимание, что пробелы вокруг &lt;code&gt;=&lt;/code&gt; не допускаются.&lt;/p&gt;
+</content>
+            </entry>
         
             <entry>
                 <title>Кеширование методов и функций между запросами в джанго</title>

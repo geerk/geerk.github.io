@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="author" content="Timofey Trukhanov">
+<meta name="description" content="Персональный блог Тимофея Труханова">
+<meta name="generator" content="mynt v0.2.3">
+
+<link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon">
+
+<link rel="alternate" href="/feed.xml" type="application/atom+xml">
+
+<link rel="stylesheet" href="/assets/css/screen.css" type="text/css">
+<link rel="stylesheet" href="/assets/css/pygments.css" type="text/css">
+
+
+    <script type="text/javascript">
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-41614976-1']);
+        _gaq.push(['_trackPageview']);
+
+        (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
+
+
+    <title>Работа с секретными ключами и паролями &ndash; Труханов блог</title>
+</head>
+
+<body>
+    <div id="container">
+        <div id="nav">
+            <ul>
+                <li><a href="/">Blog</a></li>
+                <li><a href="/archives/">Archives</a></li>
+                <li><a href="/feed.xml">Feed</a></li>
+            </ul>
+                <ul id="social">
+            
+                    
+                    
+                    <li><a href="https://github.com/geerk"><img src="/assets/images/social/github.png" width="16" height="16" alt="GitHub"></a></li>
+                    
+                    
+                    
+                    
+                    <li><a href="https://twitter.com/#!/geerk"><img src="/assets/images/social/twitter.png" width="16" height="16" alt="Twitter"></a></li>
+            
+                    <li><a href="http://masters.donntu.edu.ua/2013/fknt/trukhanov/">ДонНТУ</a></li>
+                </ul>
+        </div>
+
+        <div id="header">
+            <h1><a href="/">Труханов блог</a></h1>
+            
+        </div>
+
+        <div id="content">
+            
+    <div class="item">
+        <div class="header">
+            <h1>Работа с секретными ключами и паролями</h1>
+            <h2>Sunday, November 17, 2013 <span>&raquo;</span> <a href="/tags/">джанго</a>, <a href="/tags/">ключи</a>, <a href="/tags/">пайтон</a>, <a href="/tags/">пароли</a>, <a href="/tags/">программирование</a></h2>
+        </div>
+        
+        <div class="body">
+            <p>Для безопасности все секретные ключи и пароли не следует напрямую хранить в файле настроек чтобы они не попали в систему контроля версий. Для этого в <a href="http://django.2scoops.org/">Two Scoops of Django</a> предлагается использовать переменные окружения операционной системы. Перед запуском приложения все необходимые секретные ключи и пароли устанавливаются в переменные окружения, а в файле настроек прописывается загрузка этих переменных из окружения с помощью примерно такой функции:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9</pre></div></td><td class="code"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.core.exceptions</span> <span class="kn">import</span> <span class="n">ImproperlyConfigured</span>
+
+
+<span class="k">def</span> <span class="nf">get_env_variable</span><span class="p">(</span><span class="n">var_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Get the environment variable or return exception &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="n">var_name</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ImproperlyConfigured</span><span class="p">(</span><span class="s">&#39;Set the {} environment variable&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">var_name</span><span class="p">))</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>А загрузка переменных окружения выглядит следующим образом: <code>SECRET_KEY = get_env_variable(&#39;SECRET_KEY&#39;)</code></p>
+
+<p>Для удобства разработки можно все чувствительные переменные записать в файл <code>.env</code>, добавить его в <code>.gitignore</code> и воспользоваться приложением <a href="https://github.com/jacobian/django-dotenv">django-dotenv</a>, которое при запуске будет загружать данные из файла в переменные окружения. Для этого нужно в файлы <code>manage.py</code> (для локальной разработки) и <code>wsgi.py</code> (для боевых серверов) следующие строки:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3</pre></div></td><td class="code"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">dotenv</span>
+
+<span class="n">dotenv</span><span class="o">.</span><span class="n">read_dotenv</span><span class="p">(</span><span class="s">&#39;settings/.env&#39;</span><span class="p">)</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>В функции <code>dotenv.read_dotenv</code> можно указать путь к файлу <code>.env</code>.<br>
+Сам файл <code>.env</code> выглядит следующим образом (все пароли вымышлены):</p>
+<pre><code>SECRET_KEY=&#x27;9&amp;W$5t4rtg53RTFW%$^#4535764yzems*1^scad0-k-q$-(g5d&#x27;
+GOOGLE_API_KEY=&#x27;VIzaSyCjZM0iuOmaWIJJvS-WDlCAVw3HfyGA5kc&#x27;
+AWS_S3_ACCESS_KEY_ID=&#x27;HKIAJGS3RONZ2LDHXDBA&#x27;
+AWS_S3_SECRET_ACCESS_KEY=&#x27;I3ID5mBMwzSE4OhGWNVbNlvK+nU6F36+5a&#x2F;4CzJm&#x27;
+</code></pre>
+<p>Обратите внимание, что пробелы вокруг <code>=</code> не допускаются.</p>
+
+        </div>
+    </div>
+
+        </div>
+
+        <div id="footer">
+        <p style="float: right; margin-top: 0px;"><a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.ru"><img alt="Лицензия Creative Commons" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/80x15.png" /></a></p><p>Copyright &copy; 2013 Timofey Trukhanov &ndash; powered by <a href="http://mynt.mirroredwhite.com/">mynt</a></p>
+        </div>
+    </div>
+</body>
+</html>
