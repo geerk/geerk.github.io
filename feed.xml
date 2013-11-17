@@ -6,7 +6,7 @@
         <link rel="alternate" href="http://blog.trukhanov.net/" />
         <link rel="self" href="http://blog.trukhanov.net/feed.xml" type="application/atom+xml" />
         <id>http://blog.trukhanov.net/</id>
-        <updated>2013-11-17T15:21:41Z</updated>
+        <updated>2013-11-17T15:59:45Z</updated>
         
         <author>
             <name>Timofey Trukhanov</name>
@@ -14,6 +14,74 @@
             <uri>http://blog.trukhanov.net/</uri>
         </author>
         
+        
+            <entry>
+                <title>AWS IAM для django-storages</title>
+                <link rel="alternate" href="http://blog.trukhanov.net/AWS-IAM-dlia-django-storages/" type="text/html" />
+                <id>http://blog.trukhanov.net/AWS-IAM-dlia-django-storages/</id>
+                <updated>2013-11-17T15:53:00Z</updated>
+                
+                <summary type="html">&lt;a href=&#34;http://django-storages.readthedocs.org/&#34;&gt;django-storages&lt;/a&gt; - библиотека, позволяющая подключать различные файловые системы в джангу. Я же её использую в основном для подключеня &lt;a href=&#34;http://aws.amazon.com/s3/&#34;&gt;AWS S3&lt;/a&gt; в качестве хранилища статических и медиа файлов. Естественно для этого необходимо этой библиотеки дать доступ к S3 бакету, в который она будет складывать все эти файлы. Но давать доступ ко всему аккаунту не хотелось бы. Решением в данной ситуации может быть &lt;a href=&#34;http://aws.amazon.com/iam/&#34;&gt;AWS IAM&lt;/a&gt;.</summary>
+                <content type="html">&lt;p&gt;&lt;a href=&#34;http://django-storages.readthedocs.org/&#34;&gt;django-storages&lt;/a&gt; - библиотека, позволяющая подключать различные файловые системы в джангу. Я же её использую в основном для подключеня &lt;a href=&#34;http://aws.amazon.com/s3/&#34;&gt;AWS S3&lt;/a&gt; в качестве хранилища статических и медиа файлов. Естественно для этого необходимо этой библиотеки дать доступ к S3 бакету, в который она будет складывать все эти файлы. Но давать доступ ко всему аккаунту не хотелось бы. Решением в данной ситуации может быть &lt;a href=&#34;http://aws.amazon.com/iam/&#34;&gt;AWS IAM&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;AWS IAM позволяет создавать виртуальных пользователей с ограниченными правами для доступа к вашему AWS-аккаунту. Это один из способ повышения безопасности. В случае если злоумышленник завладеет секретными ключами к этому виртуальному пользователю он не сможет навредить больше, чем вы дали прав этому пользователю.&lt;/p&gt;
+
+&lt;p&gt;Для этих виртуальных пользователей необходимо прописывать политику безопасности. Политика для ограничения доступа к конкретному бакету на S3 (взята &lt;a href=&#34;http://blogs.aws.amazon.com/security/post/Tx3VRSWZ6B3SHAV/Writing-IAM-Policies-How-to-grant-access-to-an-Amazon-S3-bucket&#34;&gt;отсюда&lt;/a&gt;):&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;javascript&#34;&gt;{
+    &amp;quot;Statement&amp;quot;: [
+        {
+            &amp;quot;Effect&amp;quot;: &amp;quot;Allow&amp;quot;,
+            &amp;quot;Action&amp;quot;: [&amp;quot;s3:ListBucket&amp;quot; ],
+            &amp;quot;Resource&amp;quot;: [ &amp;quot;arn:aws:s3:::test&amp;quot;]
+        },
+        {
+            &amp;quot;Effect&amp;quot;: &amp;quot;Allow&amp;quot;,
+            &amp;quot;Action&amp;quot;: [ &amp;quot;s3:PutObject&amp;quot;, &amp;quot;s3:GetObject&amp;quot;, &amp;quot;s3:DeleteObject&amp;quot;],
+            &amp;quot;Resource&amp;quot;: [ &amp;quot;arn:aws:s3:::test&amp;#x2F;*&amp;quot;]
+        }
+    ]
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Но у меня не получилось заставить работать эту политику для django-storages. Опытным путем выяснилось, что нужно добавить еще разрешения для &lt;a href=&#34;http://docs.aws.amazon.com/AmazonS3/latest/dev/ACLOverview.html&#34;&gt;acl&lt;/a&gt;, а именно: GetObjectAcl и PutObjectAcl. В итоге получилось вот так:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;javascript&#34;&gt;{
+  &amp;quot;Statement&amp;quot;: [
+    {
+      &amp;quot;Action&amp;quot;: [
+        &amp;quot;s3:DeleteObject&amp;quot;,
+        &amp;quot;s3:GetObject&amp;quot;,
+        &amp;quot;s3:GetObjectAcl&amp;quot;,
+        &amp;quot;s3:PutObject&amp;quot;,
+        &amp;quot;s3:PutObjectAcl&amp;quot;
+      ],
+      &amp;quot;Resource&amp;quot;: [
+        &amp;quot;arn:aws:s3:::test&amp;#x2F;*&amp;quot;
+      ],
+      &amp;quot;Effect&amp;quot;: &amp;quot;Allow&amp;quot;
+    },
+    {
+      &amp;quot;Action&amp;quot;: [
+        &amp;quot;s3:ListBucket&amp;quot;
+      ],
+      &amp;quot;Resource&amp;quot;: [
+        &amp;quot;arn:aws:s3:::test&amp;quot;
+      ],
+      &amp;quot;Effect&amp;quot;: &amp;quot;Allow&amp;quot;
+    }
+  ]
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;После создания виртуального пользователя с такой политикой безопасности, необходимо скопировать ключи доступа в переменные окружения и оттуда брать их в файле настроек джанго (как я описывал в &lt;a href=&#34;http://blog.trukhanov.net/Rabota-s-sekretnymi-kliuchami-i-paroliami&#34;&gt;предыдущей записи&lt;/a&gt;), чтобы они были доступны для django-storages. После этого мой файл настроек выглядит следующим образом:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;INSTALLED_APPS += (&amp;#x27;storages&amp;#x27;,)
+AWS_STORAGE_BUCKET_NAME = get_env_variable(&amp;#x27;AWS_STORAGE_BUCKET_NAME&amp;#x27;)
+AWS_S3_ACCESS_KEY_ID = get_env_variable(&amp;#x27;AWS_S3_ACCESS_KEY_ID&amp;#x27;)
+AWS_S3_SECRET_ACCESS_KEY = get_env_variable(&amp;#x27;AWS_S3_SECRET_ACCESS_KEY&amp;#x27;)
+STATICFILES_STORAGE = &amp;#x27;storages.backends.s3boto.S3BotoStorage&amp;#x27;
+DEFAULT_FILE_STORAGE = &amp;#x27;storages.backends.s3boto.S3BotoStorage&amp;#x27;
+S3_URL = &amp;#x27;http:&amp;#x2F;&amp;#x2F;{}.s3.amazonaws.com&amp;#x2F;&amp;#x27;.format(AWS_STORAGE_BUCKET_NAME)
+STATIC_URL = S3_URL
+USE_S3 = True
+&lt;/code&gt;&lt;/pre&gt;</content>
+            </entry>
         
             <entry>
                 <title>Работа с секретными ключами и паролями</title>
