@@ -351,6 +351,12 @@ small a {
   text-transform: none;
 }
 
+div.item {
+  margin-bottom: 30px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e6e6e6;
+}
+
 div.item + div.item div.header h1 {
   margin-top: 25px;
   padding-top: 25px;
