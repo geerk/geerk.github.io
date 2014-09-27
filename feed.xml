@@ -6,7 +6,7 @@
         <link rel="alternate" href="http://blog.trukhanov.net/" />
         <link rel="self" href="http://blog.trukhanov.net/feed.xml" type="application/atom+xml" />
         <id>http://blog.trukhanov.net/</id>
-        <updated>2014-09-27T10:15:56Z</updated>
+        <updated>2014-09-27T10:18:57Z</updated>
         
         <author>
             <name>Timofey Trukhanov</name>
@@ -16,10 +16,10 @@
         
         
             <entry>
-                <title>Run synchronous code on tornado asynchronously</title>
-                <link rel="alternate" href="http://blog.trukhanov.net/Run-synchronous-code-on-tornado-asynchronously/" type="text/html" />
-                <id>http://blog.trukhanov.net/Run-synchronous-code-on-tornado-asynchronously/</id>
-                <updated>2014-09-26T10:12:00Z</updated>
+                <title>Running synchronous code on tornado asynchronously</title>
+                <link rel="alternate" href="http://blog.trukhanov.net/Running-synchronous-code-on-tornado-asynchronously/" type="text/html" />
+                <id>http://blog.trukhanov.net/Running-synchronous-code-on-tornado-asynchronously/</id>
+                <updated>2014-09-26T10:18:00Z</updated>
                 
                 <summary type="html">Have you ever needed to run synchronous code in asynchronous way on tornado? I had such a need.</summary>
                 <content type="html">&lt;p&gt;Have you ever needed to run synchronous code in asynchronous way on tornado? I had such a need.&lt;/p&gt;
