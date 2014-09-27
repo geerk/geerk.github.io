@@ -6,7 +6,7 @@
 
 <meta name="author" content="Timofey Trukhanov">
 <meta name="description" content="Персональный блог Тимофея Труханова">
-<meta name="generator" content="mynt v0.2.3">
+<meta name="generator" content="mynt v0.3.1">
 
 <link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon">
 
@@ -66,16 +66,16 @@
         
         <div class="item">
             <div class="header">
-                <h1><a href="/Rabota-s-sekretnymi-kliuchami-i-paroliami/">Работа с секретными ключами и паролями</a></h1>
-                <h2>Sunday, November 17, 2013 <span>&raquo;</span> <a href="/tags/django/">django</a>, <a href="/tags/keys/">keys</a>, <a href="/tags/passwords/">passwords</a>, <a href="/tags/python/">python</a></h2>
+                <h1><a href="/Run-synchronous-code-on-tornado-asynchronously/">Run synchronous code on tornado asynchronously</a></h1>
+                <h2>Friday, September 26, 2014 <span>&raquo;</span> <a href="/tags/futures/">futures</a>, <a href="/tags/python/">python</a>, <a href="/tags/tornado/">tornado</a></h2>
             </div>
-            
+
             <div class="body">
-                <p>Для безопасности все секретные ключи и пароли не следует напрямую хранить в файле настроек чтобы они не попали в систему контроля версий. Для этого в <a href="http://django.2scoops.org/">Two Scoops of Django</a> предлагается использовать переменные окружения операционной системы. Перед запуском приложения все необходимые секретные ключи и пароли устанавливаются в переменные окружения, а в файле настроек прописывается загрузка этих переменных из окружения с помощью примерно такой функции:</p>
+                <p>Have you ever needed to run synchronous code in asynchronous way on tornado? I have needed.</p>
             </div>
-            
+
             <div class="footer">
-                <p><a href="/Rabota-s-sekretnymi-kliuchami-i-paroliami/">Continue Reading</a></p>
+                <p><a href="/Run-synchronous-code-on-tornado-asynchronously/">Continue Reading</a></p>
             </div>
         </div>
     
@@ -85,13 +85,29 @@
                 <h1><a href="/AWS-IAM-dlia-django-storages/">AWS IAM для django-storages</a></h1>
                 <h2>Sunday, November 17, 2013 <span>&raquo;</span> <a href="/tags/AWS/">AWS</a>, <a href="/tags/django/">django</a>, <a href="/tags/IAM/">IAM</a>, <a href="/tags/python/">python</a>, <a href="/tags/S3/">S3</a></h2>
             </div>
-            
+
             <div class="body">
                 <p><a href="http://django-storages.readthedocs.org/">django-storages</a> - библиотека, позволяющая подключать различные файловые системы в джангу. Я же её использую в основном для подключеня <a href="http://aws.amazon.com/s3/">AWS S3</a> в качестве хранилища статических и медиа файлов. Естественно для этого необходимо этой библиотеки дать доступ к S3 бакету, в который она будет складывать все эти файлы. Но давать доступ ко всему аккаунту не хотелось бы. Решением в данной ситуации может быть <a href="http://aws.amazon.com/iam/">AWS IAM</a>.</p>
             </div>
-            
+
             <div class="footer">
                 <p><a href="/AWS-IAM-dlia-django-storages/">Continue Reading</a></p>
+            </div>
+        </div>
+    
+        
+        <div class="item">
+            <div class="header">
+                <h1><a href="/Rabota-s-sekretnymi-kliuchami-i-paroliami/">Работа с секретными ключами и паролями</a></h1>
+                <h2>Sunday, November 17, 2013 <span>&raquo;</span> <a href="/tags/django/">django</a>, <a href="/tags/keys/">keys</a>, <a href="/tags/passwords/">passwords</a>, <a href="/tags/python/">python</a></h2>
+            </div>
+
+            <div class="body">
+                <p>Для безопасности все секретные ключи и пароли не следует напрямую хранить в файле настроек чтобы они не попали в систему контроля версий. Для этого в <a href="http://django.2scoops.org/">Two Scoops of Django</a> предлагается использовать переменные окружения операционной системы. Перед запуском приложения все необходимые секретные ключи и пароли устанавливаются в переменные окружения, а в файле настроек прописывается загрузка этих переменных из окружения с помощью примерно такой функции:</p>
+            </div>
+
+            <div class="footer">
+                <p><a href="/Rabota-s-sekretnymi-kliuchami-i-paroliami/">Continue Reading</a></p>
             </div>
         </div>
     
@@ -101,11 +117,11 @@
                 <h1><a href="/Keshirovaniye-metodov-i-funktsiy-mezhdu-zaprosami-v-Dzhango/">Кеширование методов и функций между запросами в джанго</a></h1>
                 <h2>Saturday, August 24, 2013 <span>&raquo;</span> <a href="/tags/caching/">caching</a>, <a href="/tags/django/">django</a>, <a href="/tags/optimization/">optimization</a>, <a href="/tags/python/">python</a></h2>
             </div>
-            
+
             <div class="body">
                 <p>Ранее, в <a href="/Keshirovanie-metodov-modeli-v-Django/">одном</a> из предыдущих постов, я рассказывал о том как кешировать результаты выполнения запросов в методах моделей в пределах одного запроса веб-страницы. В этом же посте я расскажу как можно кешировать результаты выполнения функций или методов на более длительный период времени.</p>
             </div>
-            
+
             <div class="footer">
                 <p><a href="/Keshirovaniye-metodov-i-funktsiy-mezhdu-zaprosami-v-Dzhango/">Continue Reading</a></p>
             </div>
@@ -117,11 +133,11 @@
                 <h1><a href="/Uslovnye-podzaprosy-v-Django/">Условные подзапросы в Джанго</a></h1>
                 <h2>Sunday, August 18, 2013 <span>&raquo;</span> <a href="/tags/django/">django</a>, <a href="/tags/optimization/">optimization</a>, <a href="/tags/python/">python</a></h2>
             </div>
-            
+
             <div class="body">
                 <p>Часто к моделям в Джанго нужно дописывать вычисляемые свойства (например: <code>has_users</code>, <code>has_votes</code>, <code>articles_count</code>, <code>avg_price</code> и т.д.). Как правило эти свойства вычисляются по какому-либо условию на основании полей модели или зависимых моделей, которые можно подтянуть с помощью <code>select_related</code> и это не приведет к увеличению числа запросов к базе данных. Но иногда необходимо вычислять такие свойства на основании данных из обратных связей (см. <a href="https://docs.djangoproject.com/en/1.5/ref/models/relations/#django.db.models.fields.related.RelatedManager">RelatedManager</a>). В таких случаях простой способ с написанием дополнительных методов к модели может привести к линейному увеличению запросов к базе пропорционально увеличению количества объектов этой модели на странице.</p>
             </div>
-            
+
             <div class="footer">
                 <p><a href="/Uslovnye-podzaprosy-v-Django/">Continue Reading</a></p>
             </div>
@@ -133,11 +149,11 @@
                 <h1><a href="/Prostoy-sposob-vydeleniya-aktivnoy-vrladki-menu-v-Django/">Простой способ выделения активной вкладки меню в Джанго</a></h1>
                 <h2>Friday, July 12, 2013 <span>&raquo;</span> <a href="/tags/django/">django</a>, <a href="/tags/mixin/">mixin</a>, <a href="/tags/python/">python</a></h2>
             </div>
-            
+
             <div class="body">
                 <p>Одна из частых задач при разработке типичного сайта - на разных страницах выделять текущий активный раздел сайта или меню. Это могут быть как просто разделы меню так и вкладки или что-то другое. Как правило для выделения вкладки прописывается дополнительный класс <code>active</code> в css и выделением является присваивание этого класа нужному html-блоку при генерации страниц.</p>
             </div>
-            
+
             <div class="footer">
                 <p><a href="/Prostoy-sposob-vydeleniya-aktivnoy-vrladki-menu-v-Django/">Continue Reading</a></p>
             </div>
@@ -149,11 +165,11 @@
                 <h1><a href="/Keshirovanie-metodov-modeli-v-Django/">Кеширование методов модели в Джанго в пределах одного запроса</a></h1>
                 <h2>Monday, July 08, 2013 <span>&raquo;</span> <a href="/tags/caching/">caching</a>, <a href="/tags/django/">django</a>, <a href="/tags/python/">python</a></h2>
             </div>
-            
+
             <div class="body">
                 <p>В книге <a href="http://django.2scoops.org/">Two scoops of Django</a> советуют всю бизнесовую логику держать в моделях. И я с этим согласен, это действительно удобно. Один из самых простых методов реализации этого совета - написание дополнительных методов в модели для добавления необходимого поведения. Эти методы потом можно использовать как в контроллерах (views) так и в представлениях (templates).</p>
             </div>
-            
+
             <div class="footer">
                 <p><a href="/Keshirovanie-metodov-modeli-v-Django/">Continue Reading</a></p>
             </div>
@@ -165,24 +181,24 @@
                 <h1><a href="/Python-timestamps/">Таймстампы в пайтоне</a></h1>
                 <h2>Sunday, June 09, 2013 <span>&raquo;</span> <a href="/tags/python/">python</a>, <a href="/tags/timestamps/">timestamps</a></h2>
             </div>
-            
+
             <div class="body">
-                <p>Однажды в одном проекте мне понадобилось преобразовать <code>utc datetime</code> в <code>unix timestamp</code>.<br>
+                <p>Однажды в одном проекте мне понадобилось преобразовать <code>utc datetime</code> в <code>unix timestamp</code>.
 Сразу оговорюсь что описанное ниже относится к Python 2.7.</p>
             </div>
-            
+
             <div class="footer">
                 <p><a href="/Python-timestamps/">Continue Reading</a></p>
             </div>
         </div>
     
-    
+
     
 
         </div>
 
         <div id="footer">
-        <p style="float: right; margin-top: 0px;"><a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.ru"><img alt="Лицензия Creative Commons" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/80x15.png" /></a></p><p>Copyright &copy; 2014 Timofey Trukhanov &ndash; powered by <a href="http://mynt.mirroredwhite.com/">mynt</a></p>
+        <p style="float: right; margin-top: 0px;"><a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.ru"><img alt="Лицензия Creative Commons" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/80x15.png" /></a></p><p>Copyright &copy; 2013-2014 Timofey Trukhanov &ndash; powered by <a href="http://mynt.mirroredwhite.com/">mynt</a></p>
         </div>
     </div>
 </body>

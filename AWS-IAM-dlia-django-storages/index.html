@@ -6,7 +6,7 @@
 
 <meta name="author" content="Timofey Trukhanov">
 <meta name="description" content="Персональный блог Тимофея Труханова">
-<meta name="generator" content="mynt v0.2.3">
+<meta name="generator" content="mynt v0.3.1">
 
 <link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon">
 
@@ -87,20 +87,20 @@
 11
 12
 13
-14</pre></div></td><td class="code"><div class="highlight"><pre><span class="p">{</span>
-    <span class="s2">&quot;Statement&quot;</span><span class="o">:</span> <span class="p">[</span>
-        <span class="p">{</span>
-            <span class="s2">&quot;Effect&quot;</span><span class="o">:</span> <span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Action&quot;</span><span class="o">:</span> <span class="p">[</span><span class="s2">&quot;s3:ListBucket&quot;</span> <span class="p">],</span>
-            <span class="s2">&quot;Resource&quot;</span><span class="o">:</span> <span class="p">[</span> <span class="s2">&quot;arn:aws:s3:::test&quot;</span><span class="p">]</span>
-        <span class="p">},</span>
-        <span class="p">{</span>
-            <span class="s2">&quot;Effect&quot;</span><span class="o">:</span> <span class="s2">&quot;Allow&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Action&quot;</span><span class="o">:</span> <span class="p">[</span> <span class="s2">&quot;s3:PutObject&quot;</span><span class="p">,</span> <span class="s2">&quot;s3:GetObject&quot;</span><span class="p">,</span> <span class="s2">&quot;s3:DeleteObject&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;Resource&quot;</span><span class="o">:</span> <span class="p">[</span> <span class="s2">&quot;arn:aws:s3:::test/*&quot;</span><span class="p">]</span>
-        <span class="p">}</span>
-    <span class="p">]</span>
-<span class="p">}</span>
+14</pre></div></td><td class="code"><div class="highlight"><pre>{
+    &quot;Statement&quot;: [
+        {
+            &quot;Effect&quot;: &quot;Allow&quot;,
+            &quot;Action&quot;: [&quot;s3:ListBucket&quot; ],
+            &quot;Resource&quot;: [ &quot;arn:aws:s3:::test&quot;]
+        },
+        {
+            &quot;Effect&quot;: &quot;Allow&quot;,
+            &quot;Action&quot;: [ &quot;s3:PutObject&quot;, &quot;s3:GetObject&quot;, &quot;s3:DeleteObject&quot;],
+            &quot;Resource&quot;: [ &quot;arn:aws:s3:::test/*&quot;]
+        }
+    ]
+}
 </pre></div>
 </td></tr></table></div></div>
 <p>Но у меня не получилось заставить работать эту политику для django-storages. Опытным путем выяснилось, что нужно добавить еще разрешения для <a href="http://docs.aws.amazon.com/AmazonS3/latest/dev/ACLOverview.html">acl</a>, а именно: GetObjectAcl и PutObjectAcl. В итоге получилось вот так:</p>
@@ -129,32 +129,32 @@
 23
 24
 25
-26</pre></div></td><td class="code"><div class="highlight"><pre><span class="p">{</span>
-  <span class="s2">&quot;Statement&quot;</span><span class="o">:</span> <span class="p">[</span>
-    <span class="p">{</span>
-      <span class="s2">&quot;Action&quot;</span><span class="o">:</span> <span class="p">[</span>
-        <span class="s2">&quot;s3:DeleteObject&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;s3:GetObject&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;s3:GetObjectAcl&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;s3:PutObject&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;s3:PutObjectAcl&quot;</span>
-      <span class="p">],</span>
-      <span class="s2">&quot;Resource&quot;</span><span class="o">:</span> <span class="p">[</span>
-        <span class="s2">&quot;arn:aws:s3:::test/*&quot;</span>
-      <span class="p">],</span>
-      <span class="s2">&quot;Effect&quot;</span><span class="o">:</span> <span class="s2">&quot;Allow&quot;</span>
-    <span class="p">},</span>
-    <span class="p">{</span>
-      <span class="s2">&quot;Action&quot;</span><span class="o">:</span> <span class="p">[</span>
-        <span class="s2">&quot;s3:ListBucket&quot;</span>
-      <span class="p">],</span>
-      <span class="s2">&quot;Resource&quot;</span><span class="o">:</span> <span class="p">[</span>
-        <span class="s2">&quot;arn:aws:s3:::test&quot;</span>
-      <span class="p">],</span>
-      <span class="s2">&quot;Effect&quot;</span><span class="o">:</span> <span class="s2">&quot;Allow&quot;</span>
-    <span class="p">}</span>
-  <span class="p">]</span>
-<span class="p">}</span>
+26</pre></div></td><td class="code"><div class="highlight"><pre>{
+  &quot;Statement&quot;: [
+    {
+      &quot;Action&quot;: [
+        &quot;s3:DeleteObject&quot;,
+        &quot;s3:GetObject&quot;,
+        &quot;s3:GetObjectAcl&quot;,
+        &quot;s3:PutObject&quot;,
+        &quot;s3:PutObjectAcl&quot;
+      ],
+      &quot;Resource&quot;: [
+        &quot;arn:aws:s3:::test/*&quot;
+      ],
+      &quot;Effect&quot;: &quot;Allow&quot;
+    },
+    {
+      &quot;Action&quot;: [
+        &quot;s3:ListBucket&quot;
+      ],
+      &quot;Resource&quot;: [
+        &quot;arn:aws:s3:::test&quot;
+      ],
+      &quot;Effect&quot;: &quot;Allow&quot;
+    }
+  ]
+}
 </pre></div>
 </td></tr></table></div></div>
 <p>После создания виртуального пользователя с такой политикой безопасности, необходимо скопировать ключи доступа в переменные окружения и оттуда брать их в файле настроек джанго (как я описывал в <a href="/Rabota-s-sekretnymi-kliuchami-i-paroliami">предыдущей записи</a>), чтобы они были доступны для django-storages. После этого мой файл настроек выглядит следующим образом:</p>
@@ -200,7 +200,7 @@
         </div>
 
         <div id="footer">
-        <p style="float: right; margin-top: 0px;"><a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.ru"><img alt="Лицензия Creative Commons" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/80x15.png" /></a></p><p>Copyright &copy; 2014 Timofey Trukhanov &ndash; powered by <a href="http://mynt.mirroredwhite.com/">mynt</a></p>
+        <p style="float: right; margin-top: 0px;"><a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.ru"><img alt="Лицензия Creative Commons" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/80x15.png" /></a></p><p>Copyright &copy; 2013-2014 Timofey Trukhanov &ndash; powered by <a href="http://mynt.mirroredwhite.com/">mynt</a></p>
         </div>
     </div>
 </body>

@@ -6,7 +6,7 @@
 
 <meta name="author" content="Timofey Trukhanov">
 <meta name="description" content="Персональный блог Тимофея Труханова">
-<meta name="generator" content="mynt v0.2.3">
+<meta name="generator" content="mynt v0.3.1">
 
 <link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon">
 
@@ -69,7 +69,7 @@
         </div>
 
         <div class="body">
-            <p>Однажды в одном проекте мне понадобилось преобразовать <code>utc datetime</code> в <code>unix timestamp</code>.<br>
+            <p>Однажды в одном проекте мне понадобилось преобразовать <code>utc datetime</code> в <code>unix timestamp</code>.
 Сразу оговорюсь что описанное ниже относится к Python 2.7.</p>
 
 <p>Если просто погуглить, то везде советуют следующий способ:</p>
@@ -84,7 +84,7 @@
 <span class="n">timestamp</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">mktime</span><span class="p">(</span><span class="n">now</span><span class="o">.</span><span class="n">timetuple</span><span class="p">())</span>
 </pre></div>
 </td></tr></table></div></div>
-<p>Все это правильно, но кто же пользуется локальным временем?<br>
+<p>Все это правильно, но кто же пользуется локальным временем?
 У меня естественно время в utc, поэтому следующий код с точки зрения использования модуля <code>time</code> является неправильным:</p>
 <div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2
@@ -107,17 +107,40 @@
 </td></tr></table></div></div>
 <p>И действительно, если погуглить на тему как получить юникс таймстамп в пайтоне, то именно это вы и найдете, однако такой способ правильный только в том случае, если вы везде используете локальное время, но кто же его использует? Соответственно разница между моим таймстампом и таймстампом этого программиста получилась 3 часа.</p>
 <h1>Документация</h1>
-<p>Далее обращаемся к <a href="http://docs.python.org/2/library/time.html">документации пайтона по модулю time</a> и обнаруживаем, что к функции <code>time.time()</code> вообще не написано какое время она возвращает - локальное или глобальное. Зато есть две другие функции: <code>time.localtime()</code> и <code>time.gmtime()</code>. Тут из названия очевидно какое время какая функция возвращает. Но! Обе эти функции возвращают не число, а <a href="http://docs.python.org/2/library/time.html#time.struct_time">struct_time</a>.<br>
+<p>Далее обращаемся к <a href="http://docs.python.org/2/library/time.html">документации пайтона по модулю time</a> и обнаруживаем, что к функции <code>time.time()</code> вообще не написано какое время она возвращает - локальное или глобальное. Зато есть две другие функции: <code>time.localtime()</code> и <code>time.gmtime()</code>. Тут из названия очевидно какое время какая функция возвращает. Но! Обе эти функции возвращают не число, а <a href="http://docs.python.org/2/library/time.html#time.struct_time">struct_time</a>.
 А если почитать документацию к функции <code>time.mktime()</code>, то выясняется что эта функция ожидает в качестве аргумента <a href="http://docs.python.org/2/library/time.html#time.struct_time">struct_time</a> в <strong>локальном</strong> времени. Логично предположить, что должна быть симметричная функция <code>time.mktimegm()</code> или что-то подобное. Но не тут то было. Оказывается чтобы преобразовать <a href="http://docs.python.org/2/library/time.html#time.struct_time">struct_time</a> в <strong>глобальном</strong> времени необходимо обращаться к функции из совершенно другого модуля, а именно к <code>calendar.timegm()</code>. Что за черт?</p>
 
 <p>В документации даже можно найти такую табличку:</p>
-<pre><code>From                     | To                        | Use
--------------------------|---------------------------|------------------
-seconds since the epoch  | struct_time in UTC        | gmtime()
-seconds since the epoch  | struct_time in local time | localtime()
-struct_time in UTC       | seconds since the epoch   | calendar.timegm()
-struct_time in local time| seconds since the epoch   | mktime()
-</code></pre><h1>Неочевидности</h1><div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+
+<table><thead>
+<tr>
+<th>From</th>
+<th>To</th>
+<th>Use</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>seconds since the epoch</td>
+<td>struct_time in UTC</td>
+<td>gmtime()</td>
+</tr>
+<tr>
+<td>seconds since the epoch</td>
+<td>struct_time in local time</td>
+<td>localtime()</td>
+</tr>
+<tr>
+<td>struct_time in UTC</td>
+<td>seconds since the epoch</td>
+<td>calendar.timegm()</td>
+</tr>
+<tr>
+<td>struct_time in local time</td>
+<td>seconds since the epoch</td>
+<td>mktime()</td>
+</tr>
+</tbody></table>
+<h1>Неочевидности</h1><div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2
 3
 4
@@ -193,7 +216,7 @@ struct_time in local time| seconds since the epoch   | mktime()
         </div>
 
         <div id="footer">
-        <p style="float: right; margin-top: 0px;"><a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.ru"><img alt="Лицензия Creative Commons" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/80x15.png" /></a></p><p>Copyright &copy; 2014 Timofey Trukhanov &ndash; powered by <a href="http://mynt.mirroredwhite.com/">mynt</a></p>
+        <p style="float: right; margin-top: 0px;"><a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.ru"><img alt="Лицензия Creative Commons" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/80x15.png" /></a></p><p>Copyright &copy; 2013-2014 Timofey Trukhanov &ndash; powered by <a href="http://mynt.mirroredwhite.com/">mynt</a></p>
         </div>
     </div>
 </body>

@@ -6,7 +6,7 @@
         <link rel="alternate" href="http://blog.trukhanov.net/" />
         <link rel="self" href="http://blog.trukhanov.net/feed.xml" type="application/atom+xml" />
         <id>http://blog.trukhanov.net/</id>
-        <updated>2014-02-06T20:46:23Z</updated>
+        <updated>2014-09-27T09:08:25Z</updated>
         
         <author>
             <name>Timofey Trukhanov</name>
@@ -16,38 +16,73 @@
         
         
             <entry>
-                <title>Работа с секретными ключами и паролями</title>
-                <link rel="alternate" href="http://blog.trukhanov.net/Rabota-s-sekretnymi-kliuchami-i-paroliami/" type="text/html" />
-                <id>http://blog.trukhanov.net/Rabota-s-sekretnymi-kliuchami-i-paroliami/</id>
-                <updated>2013-11-17T20:31:00Z</updated>
+                <title>Run synchronous code on tornado asynchronously</title>
+                <link rel="alternate" href="http://blog.trukhanov.net/Run-synchronous-code-on-tornado-asynchronously/" type="text/html" />
+                <id>http://blog.trukhanov.net/Run-synchronous-code-on-tornado-asynchronously/</id>
+                <updated>2014-09-26T08:26:00Z</updated>
                 
-                <summary type="html">Для безопасности все секретные ключи и пароли не следует напрямую хранить в файле настроек чтобы они не попали в систему контроля версий. Для этого в &lt;a href=&#34;http://django.2scoops.org/&#34;&gt;Two Scoops of Django&lt;/a&gt; предлагается использовать переменные окружения операционной системы. Перед запуском приложения все необходимые секретные ключи и пароли устанавливаются в переменные окружения, а в файле настроек прописывается загрузка этих переменных из окружения с помощью примерно такой функции:</summary>
-                <content type="html">&lt;p&gt;Для безопасности все секретные ключи и пароли не следует напрямую хранить в файле настроек чтобы они не попали в систему контроля версий. Для этого в &lt;a href=&#34;http://django.2scoops.org/&#34;&gt;Two Scoops of Django&lt;/a&gt; предлагается использовать переменные окружения операционной системы. Перед запуском приложения все необходимые секретные ключи и пароли устанавливаются в переменные окружения, а в файле настроек прописывается загрузка этих переменных из окружения с помощью примерно такой функции:&lt;/p&gt;
-&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;from django.core.exceptions import ImproperlyConfigured
+                <summary type="html">Have you ever needed to run synchronous code in asynchronous way on tornado? I have needed.</summary>
+                <content type="html">&lt;p&gt;Have you ever needed to run synchronous code in asynchronous way on tornado? I have needed.&lt;/p&gt;
+
+&lt;p&gt;As you may know, tornado is an asynchronous library, so you have to write code in such way to not block ioloop for long time, because otherwise it will cause to stop processing other requests.&lt;/p&gt;
+
+&lt;p&gt;Usually for long operations you already have async libraries, such as database drivers or &lt;a href=&#34;http://www.tornadoweb.org/en/stable/httpclient.html#tornado.httpclient.AsyncHTTPClient&#34;&gt;AsyncHTTPClient&lt;/a&gt; for http requests. But rarely you need to run some legacy (or unreplacable) synchronouse code inside your &lt;code&gt;RequestHandler&lt;/code&gt;. In this case tornado does not provide simple way to do this.&lt;/p&gt;
+
+&lt;p&gt;Recently I&amp;rsquo;ve found a helper function in tornado&amp;rsquo;s code called &lt;code&gt;run_on_executor&lt;/code&gt; and looking to documentation it seems to be what I want to run synchronous code. But it requires some extra effort to make it work.&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s read the &lt;a href=&#34;http://www.tornadoweb.org/en/stable/concurrent.html#tornado.concurrent.run_on_executor&#34;&gt;documentation&lt;/a&gt;:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;Decorator to run a synchronous method asynchronously on an executor.&lt;/p&gt;
+
+&lt;p&gt;The decorated method may be called with a &lt;code&gt;callback&lt;/code&gt; keyword argument and returns a future.&lt;/p&gt;
+
+&lt;p&gt;This decorator should be used only on methods of objects with attributes &lt;code&gt;executor&lt;/code&gt; and &lt;code&gt;io_loop&lt;/code&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;So we need some object, which will have some &lt;code&gt;executor&lt;/code&gt; and &lt;code&gt;io_loop&lt;/code&gt; attributes. It is unclear what is &lt;code&gt;executor&lt;/code&gt; mean. Digging into source code of tornado I found &lt;code&gt;DummyExecutor&lt;/code&gt;, which implements two methods: &lt;code&gt;submit&lt;/code&gt; and &lt;code&gt;shutdown&lt;/code&gt;. Googling some time I found that Python3 introduced new module: &lt;a href=&#34;https://docs.python.org/dev/library/concurrent.futures.html&#34;&gt;concurrent.futures&lt;/a&gt;. This module has two executors: &lt;code&gt;ThreadPoolExecutor&lt;/code&gt; and &lt;code&gt;ProcessPoolExecutor&lt;/code&gt;. How you may guess from names they implements executors for threads and processes respectively. And executor is just an object which takes some function and executes it. In first case in separate thread from thread pool, in second - in separate process from process pool.&lt;/p&gt;
+
+&lt;p&gt;Fortunately this module is available as separate package for Python2 too. You can install it using &lt;code&gt;pip install futures&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Now we know what executor is, we know also what &lt;a href=&#34;http://www.tornadoweb.org/en/stable/ioloop.html&#34;&gt;io_loop&lt;/a&gt; is, so we can create this object to run synchronous code asynchronously on executor. Let&amp;rsquo;s pretend we have some legacy SOAP-client, which makes some calls to remote API. In this case better choice would be ThreadPoolExecutor, because we do not need a lot of CPU for HTTP requests. The code will look like this:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;from concurrent.futures import ThreadPoolExecutor
+from tornado import concurrent, ioloop
 
 
-def get_env_variable(var_name):
-    &amp;quot;&amp;quot;&amp;quot; Get the environment variable or return exception &amp;quot;&amp;quot;&amp;quot;
-    try:
-        return os.environ[var_name]
-    except KeyError:
-        raise ImproperlyConfigured(&amp;#39;Set the {} environment variable&amp;#39;.format(var_name))
+class LegacySOAPClientAsync(object):
+    __instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls.__instance is None:
+            cls.__instance = super(
+                LegacySOAPClientAsync, cls).__new__(cls, *args, **kwargs)
+        return cls.__instance
+
+    def __init__(self):
+        self.executor = ThreadPoolExecutor(max_workers=4)
+        self.io_loop = ioloop.IOLoop.current()
+
+    @concurrent.run_on_executor
+    def method1(self, arg1, arg2):
+        soap_client = get_soap_client()
+        return soap_client.method1(arg1, arg2)
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;А загрузка переменных окружения выглядит следующим образом: &lt;code&gt;SECRET_KEY = get_env_variable(&amp;#39;SECRET_KEY&amp;#39;)&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;I made this class singleton to use same thread pool for all cases. Now &lt;code&gt;method1&lt;/code&gt; can be called asynchronously and will be executed in separate thread not blocking main ioloop. You can control max number of workers (threads) in the thread pool by &lt;code&gt;max_workers&lt;/code&gt; argument. Now this legacy API may be asynchronously called from coroutines, like this:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;from tornado import gen, web
 
-&lt;p&gt;Для удобства разработки можно все чувствительные переменные записать в файл &lt;code&gt;.env&lt;/code&gt;, добавить его в &lt;code&gt;.gitignore&lt;/code&gt; и воспользоваться приложением &lt;a href=&#34;https://github.com/jacobian/django-dotenv&#34;&gt;django-dotenv&lt;/a&gt;, которое при запуске будет загружать данные из файла в переменные окружения. Для этого нужно в файлы &lt;code&gt;manage.py&lt;/code&gt; (для локальной разработки) и &lt;code&gt;wsgi.py&lt;/code&gt; (для боевых серверов) следующие строки:&lt;/p&gt;
-&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;import dotenv
+class SomeHandler(web.RequestHandler):
 
-dotenv.read_dotenv(&amp;#39;settings&amp;#47;.env&amp;#39;)
+    @gen.coroutine
+    def get(self):
+        legacy_api = LegacySOAPClientAsync()
+        # call legacy client asynchronously
+        result = yield legacy_api.method1(&amp;#x27;foo&amp;#x27;, &amp;#x27;bar&amp;#x27;)
+        # do some business logic here
+        self.finish(result)  # return result
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;В функции &lt;code&gt;dotenv.read_dotenv&lt;/code&gt; можно указать путь к файлу &lt;code&gt;.env&lt;/code&gt;.&lt;br&gt;
-Сам файл &lt;code&gt;.env&lt;/code&gt; выглядит следующим образом (все пароли вымышлены):&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;SECRET_KEY=&amp;#39;9&amp;amp;W$5t4rtg53RTFW%$^#4535764yzems*1^scad0-k-q$-(g5d&amp;#39;
-GOOGLE_API_KEY=&amp;#39;VIzaSyCjZM0iuOmaWIJJvS-WDlCAVw3HfyGA5kc&amp;#39;
-AWS_S3_ACCESS_KEY_ID=&amp;#39;HKIAJGS3RONZ2LDHXDBA&amp;#39;
-AWS_S3_SECRET_ACCESS_KEY=&amp;#39;I3ID5mBMwzSE4OhGWNVbNlvK+nU6F36+5a&amp;#47;4CzJm&amp;#39;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Обратите внимание, что пробелы вокруг &lt;code&gt;=&lt;/code&gt; не допускаются.&lt;/p&gt;
+&lt;p&gt;If you have CPU-bound code more relevant will be to use &lt;code&gt;ProcessPoolExecutor&lt;/code&gt;, but only if you have more then one CPU-core on your machine.&lt;/p&gt;
+
+&lt;p&gt;Of course you can improve this code, for example not instantiating API client on every call, but this is out of scope of this article.&lt;/p&gt;
 </content>
             </entry>
         
@@ -55,7 +90,7 @@ AWS_S3_SECRET_ACCESS_KEY=&amp;#39;I3ID5mBMwzSE4OhGWNVbNlvK+nU6F36+5a&amp;#47;4Cz
                 <title>AWS IAM для django-storages</title>
                 <link rel="alternate" href="http://blog.trukhanov.net/AWS-IAM-dlia-django-storages/" type="text/html" />
                 <id>http://blog.trukhanov.net/AWS-IAM-dlia-django-storages/</id>
-                <updated>2013-11-17T20:29:00Z</updated>
+                <updated>2013-11-17T20:32:00Z</updated>
                 
                 <summary type="html">&lt;a href=&#34;http://django-storages.readthedocs.org/&#34;&gt;django-storages&lt;/a&gt; - библиотека, позволяющая подключать различные файловые системы в джангу. Я же её использую в основном для подключеня &lt;a href=&#34;http://aws.amazon.com/s3/&#34;&gt;AWS S3&lt;/a&gt; в качестве хранилища статических и медиа файлов. Естественно для этого необходимо этой библиотеки дать доступ к S3 бакету, в который она будет складывать все эти файлы. Но давать доступ ко всему аккаунту не хотелось бы. Решением в данной ситуации может быть &lt;a href=&#34;http://aws.amazon.com/iam/&#34;&gt;AWS IAM&lt;/a&gt;.</summary>
                 <content type="html">&lt;p&gt;&lt;a href=&#34;http://django-storages.readthedocs.org/&#34;&gt;django-storages&lt;/a&gt; - библиотека, позволяющая подключать различные файловые системы в джангу. Я же её использую в основном для подключеня &lt;a href=&#34;http://aws.amazon.com/s3/&#34;&gt;AWS S3&lt;/a&gt; в качестве хранилища статических и медиа файлов. Естественно для этого необходимо этой библиотеки дать доступ к S3 бакету, в который она будет складывать все эти файлы. Но давать доступ ко всему аккаунту не хотелось бы. Решением в данной ситуации может быть &lt;a href=&#34;http://aws.amazon.com/iam/&#34;&gt;AWS IAM&lt;/a&gt;.&lt;/p&gt;
@@ -63,7 +98,7 @@ AWS_S3_SECRET_ACCESS_KEY=&amp;#39;I3ID5mBMwzSE4OhGWNVbNlvK+nU6F36+5a&amp;#47;4Cz
 &lt;p&gt;AWS IAM позволяет создавать виртуальных пользователей с ограниченными правами для доступа к вашему AWS-аккаунту. Это один из способ повышения безопасности. В случае если злоумышленник завладеет секретными ключами к этому виртуальному пользователю он не сможет навредить больше, чем вы дали прав этому пользователю.&lt;/p&gt;
 
 &lt;p&gt;Для этих виртуальных пользователей необходимо прописывать политику безопасности. Политика для ограничения доступа к конкретному бакету на S3 (взята &lt;a href=&#34;http://blogs.aws.amazon.com/security/post/Tx3VRSWZ6B3SHAV/Writing-IAM-Policies-How-to-grant-access-to-an-Amazon-S3-bucket&#34;&gt;отсюда&lt;/a&gt;):&lt;/p&gt;
-&lt;pre&gt;&lt;code data-lang=&#34;javascript&#34;&gt;{
+&lt;pre&gt;&lt;code data-lang=&#34;{&#34;&gt;{
     &amp;quot;Statement&amp;quot;: [
         {
             &amp;quot;Effect&amp;quot;: &amp;quot;Allow&amp;quot;,
@@ -73,13 +108,13 @@ AWS_S3_SECRET_ACCESS_KEY=&amp;#39;I3ID5mBMwzSE4OhGWNVbNlvK+nU6F36+5a&amp;#47;4Cz
         {
             &amp;quot;Effect&amp;quot;: &amp;quot;Allow&amp;quot;,
             &amp;quot;Action&amp;quot;: [ &amp;quot;s3:PutObject&amp;quot;, &amp;quot;s3:GetObject&amp;quot;, &amp;quot;s3:DeleteObject&amp;quot;],
-            &amp;quot;Resource&amp;quot;: [ &amp;quot;arn:aws:s3:::test&amp;#47;*&amp;quot;]
+            &amp;quot;Resource&amp;quot;: [ &amp;quot;arn:aws:s3:::test&amp;#x2F;*&amp;quot;]
         }
     ]
 }
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Но у меня не получилось заставить работать эту политику для django-storages. Опытным путем выяснилось, что нужно добавить еще разрешения для &lt;a href=&#34;http://docs.aws.amazon.com/AmazonS3/latest/dev/ACLOverview.html&#34;&gt;acl&lt;/a&gt;, а именно: GetObjectAcl и PutObjectAcl. В итоге получилось вот так:&lt;/p&gt;
-&lt;pre&gt;&lt;code data-lang=&#34;javascript&#34;&gt;{
+&lt;pre&gt;&lt;code data-lang=&#34;{&#34;&gt;{
   &amp;quot;Statement&amp;quot;: [
     {
       &amp;quot;Action&amp;quot;: [
@@ -90,7 +125,7 @@ AWS_S3_SECRET_ACCESS_KEY=&amp;#39;I3ID5mBMwzSE4OhGWNVbNlvK+nU6F36+5a&amp;#47;4Cz
         &amp;quot;s3:PutObjectAcl&amp;quot;
       ],
       &amp;quot;Resource&amp;quot;: [
-        &amp;quot;arn:aws:s3:::test&amp;#47;*&amp;quot;
+        &amp;quot;arn:aws:s3:::test&amp;#x2F;*&amp;quot;
       ],
       &amp;quot;Effect&amp;quot;: &amp;quot;Allow&amp;quot;
     },
@@ -107,23 +142,59 @@ AWS_S3_SECRET_ACCESS_KEY=&amp;#39;I3ID5mBMwzSE4OhGWNVbNlvK+nU6F36+5a&amp;#47;4Cz
 }
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;После создания виртуального пользователя с такой политикой безопасности, необходимо скопировать ключи доступа в переменные окружения и оттуда брать их в файле настроек джанго (как я описывал в &lt;a href=&#34;http://blog.trukhanov.net/Rabota-s-sekretnymi-kliuchami-i-paroliami&#34;&gt;предыдущей записи&lt;/a&gt;), чтобы они были доступны для django-storages. После этого мой файл настроек выглядит следующим образом:&lt;/p&gt;
-&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;INSTALLED_APPS += (&amp;#39;storages&amp;#39;,)
-AWS_STORAGE_BUCKET_NAME = get_env_variable(&amp;#39;AWS_STORAGE_BUCKET_NAME&amp;#39;)
-AWS_S3_ACCESS_KEY_ID = get_env_variable(&amp;#39;AWS_S3_ACCESS_KEY_ID&amp;#39;)
-AWS_S3_SECRET_ACCESS_KEY = get_env_variable(&amp;#39;AWS_S3_SECRET_ACCESS_KEY&amp;#39;)
-STATICFILES_STORAGE = &amp;#39;storages.backends.s3boto.S3BotoStorage&amp;#39;
-DEFAULT_FILE_STORAGE = &amp;#39;storages.backends.s3boto.S3BotoStorage&amp;#39;
-S3_URL = &amp;#39;http:&amp;#47;&amp;#47;{}.s3.amazonaws.com&amp;#47;&amp;#39;.format(AWS_STORAGE_BUCKET_NAME)
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;INSTALLED_APPS += (&amp;#x27;storages&amp;#x27;,)
+AWS_STORAGE_BUCKET_NAME = get_env_variable(&amp;#x27;AWS_STORAGE_BUCKET_NAME&amp;#x27;)
+AWS_S3_ACCESS_KEY_ID = get_env_variable(&amp;#x27;AWS_S3_ACCESS_KEY_ID&amp;#x27;)
+AWS_S3_SECRET_ACCESS_KEY = get_env_variable(&amp;#x27;AWS_S3_SECRET_ACCESS_KEY&amp;#x27;)
+STATICFILES_STORAGE = &amp;#x27;storages.backends.s3boto.S3BotoStorage&amp;#x27;
+DEFAULT_FILE_STORAGE = &amp;#x27;storages.backends.s3boto.S3BotoStorage&amp;#x27;
+S3_URL = &amp;#x27;http:&amp;#x2F;&amp;#x2F;{}.s3.amazonaws.com&amp;#x2F;&amp;#x27;.format(AWS_STORAGE_BUCKET_NAME)
 STATIC_URL = S3_URL
 USE_S3 = True
 &lt;/code&gt;&lt;/pre&gt;</content>
             </entry>
         
             <entry>
+                <title>Работа с секретными ключами и паролями</title>
+                <link rel="alternate" href="http://blog.trukhanov.net/Rabota-s-sekretnymi-kliuchami-i-paroliami/" type="text/html" />
+                <id>http://blog.trukhanov.net/Rabota-s-sekretnymi-kliuchami-i-paroliami/</id>
+                <updated>2013-11-17T20:32:00Z</updated>
+                
+                <summary type="html">Для безопасности все секретные ключи и пароли не следует напрямую хранить в файле настроек чтобы они не попали в систему контроля версий. Для этого в &lt;a href=&#34;http://django.2scoops.org/&#34;&gt;Two Scoops of Django&lt;/a&gt; предлагается использовать переменные окружения операционной системы. Перед запуском приложения все необходимые секретные ключи и пароли устанавливаются в переменные окружения, а в файле настроек прописывается загрузка этих переменных из окружения с помощью примерно такой функции:</summary>
+                <content type="html">&lt;p&gt;Для безопасности все секретные ключи и пароли не следует напрямую хранить в файле настроек чтобы они не попали в систему контроля версий. Для этого в &lt;a href=&#34;http://django.2scoops.org/&#34;&gt;Two Scoops of Django&lt;/a&gt; предлагается использовать переменные окружения операционной системы. Перед запуском приложения все необходимые секретные ключи и пароли устанавливаются в переменные окружения, а в файле настроек прописывается загрузка этих переменных из окружения с помощью примерно такой функции:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;from django.core.exceptions import ImproperlyConfigured
+
+
+def get_env_variable(var_name):
+    &amp;quot;&amp;quot;&amp;quot; Get the environment variable or return exception &amp;quot;&amp;quot;&amp;quot;
+    try:
+        return os.environ[var_name]
+    except KeyError:
+        raise ImproperlyConfigured(&amp;#x27;Set the {} environment variable&amp;#x27;.format(var_name))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;А загрузка переменных окружения выглядит следующим образом: &lt;code&gt;SECRET_KEY = get_env_variable(&amp;#39;SECRET_KEY&amp;#39;)&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Для удобства разработки можно все чувствительные переменные записать в файл &lt;code&gt;.env&lt;/code&gt;, добавить его в &lt;code&gt;.gitignore&lt;/code&gt; и воспользоваться приложением &lt;a href=&#34;https://github.com/jacobian/django-dotenv&#34;&gt;django-dotenv&lt;/a&gt;, которое при запуске будет загружать данные из файла в переменные окружения. Для этого нужно в файлы &lt;code&gt;manage.py&lt;/code&gt; (для локальной разработки) и &lt;code&gt;wsgi.py&lt;/code&gt; (для боевых серверов) следующие строки:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;import dotenv
+
+dotenv.read_dotenv(&amp;#x27;settings&amp;#x2F;.env&amp;#x27;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;В функции &lt;code&gt;dotenv.read_dotenv&lt;/code&gt; можно указать путь к файлу &lt;code&gt;.env&lt;/code&gt;.
+Сам файл &lt;code&gt;.env&lt;/code&gt; выглядит следующим образом (все пароли вымышлены):&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;SECRET_KEY=&amp;#x27;9&amp;amp;W$5t4rtg53RTFW%$^#4535764yzems*1^scad0-k-q$-(g5d&amp;#x27;
+GOOGLE_API_KEY=&amp;#x27;VIzaSyCjZM0iuOmaWIJJvS-WDlCAVw3HfyGA5kc&amp;#x27;
+AWS_S3_ACCESS_KEY_ID=&amp;#x27;HKIAJGS3RONZ2LDHXDBA&amp;#x27;
+AWS_S3_SECRET_ACCESS_KEY=&amp;#x27;I3ID5mBMwzSE4OhGWNVbNlvK+nU6F36+5a&amp;#x2F;4CzJm&amp;#x27;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Обратите внимание, что пробелы вокруг &lt;code&gt;=&lt;/code&gt; не допускаются.&lt;/p&gt;
+</content>
+            </entry>
+        
+            <entry>
                 <title>Кеширование методов и функций между запросами в джанго</title>
                 <link rel="alternate" href="http://blog.trukhanov.net/Keshirovaniye-metodov-i-funktsiy-mezhdu-zaprosami-v-Dzhango/" type="text/html" />
                 <id>http://blog.trukhanov.net/Keshirovaniye-metodov-i-funktsiy-mezhdu-zaprosami-v-Dzhango/</id>
-                <updated>2013-08-24T20:30:00Z</updated>
+                <updated>2013-08-24T20:32:00Z</updated>
                 
                 <summary type="html">Ранее, в &lt;a href=&#34;http://blog.trukhanov.net/Keshirovanie-metodov-modeli-v-Django/&#34;&gt;одном&lt;/a&gt; из предыдущих постов, я рассказывал о том как кешировать результаты выполнения запросов в методах моделей в пределах одного запроса веб-страницы. В этом же посте я расскажу как можно кешировать результаты выполнения функций или методов на более длительный период времени.</summary>
                 <content type="html">&lt;p&gt;Ранее, в &lt;a href=&#34;http://blog.trukhanov.net/Keshirovanie-metodov-modeli-v-Django/&#34;&gt;одном&lt;/a&gt; из предыдущих постов, я рассказывал о том как кешировать результаты выполнения запросов в методах моделей в пределах одного запроса веб-страницы. В этом же посте я расскажу как можно кешировать результаты выполнения функций или методов на более длительный период времени.&lt;/p&gt;
@@ -142,7 +213,7 @@ USE_S3 = True
 &lt;p&gt;Итак, для кеширования функций, я написал простенький декоратор, который использует &lt;a href=&#34;https://docs.djangoproject.com/en/1.5/topics/cache/#the-low-level-cache-api&#34;&gt;ручной интерфейс&lt;/a&gt; кеширования в джанго. Однако для начала нужно сгенерировать ключ кеширования из входных аргументов функции. В предложенной реализации я использую встроенную функцию &lt;a href=&#34;http://docs.python.org/2/library/functions.html#hash&#34;&gt;hash&lt;/a&gt;, которая используется для быстрого сравнения ключей в словарях. Вместо нее можно также взять функцию md5-хеширования из стандартной библиотеки &lt;a href=&#34;http://docs.python.org/2/library/hashlib.html&#34;&gt;hashlib&lt;/a&gt;, что и делает джанго для генерирования ключей кеширования в первых трех способах. Особенностью функции &lt;code&gt;hash&lt;/code&gt; является то, что она вычисляет хеш только по неизменяемым структурам данных (&lt;code&gt;int&lt;/code&gt;, &lt;code&gt;str&lt;/code&gt;, &lt;code&gt;tuple&lt;/code&gt; и т.д.).&lt;/p&gt;
 &lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;def get_cache_key(prefix, *args, **kwargs):
     hash_args_kwargs = hash(tuple(kwargs.iteritems()) + args)
-    return &amp;#39;{}_{}&amp;#39;.format(prefix, hash_args_kwargs)
+    return &amp;#x27;{}_{}&amp;#x27;.format(prefix, hash_args_kwargs)
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Так как &lt;code&gt;kwargs&lt;/code&gt; приходят в виде словаря, приходится преобразовывать их в &lt;code&gt;tuple&lt;/code&gt;, &lt;code&gt;args&lt;/code&gt; приходят уже в виде &lt;code&gt;tuple&lt;/code&gt;, поэтому в преобразовании нет необходимости. Следует заметить, что аргументами такой функции могут быть только хешируемые типы данных (из-за ограничений функции &lt;code&gt;hash&lt;/code&gt;).&lt;/p&gt;
 
@@ -154,7 +225,7 @@ USE_S3 = True
 from django.core.cache import cache
 
 
-def cache_func(func, timeout=500, prefix=&amp;#39;&amp;#39;):
+def cache_func(func, timeout=500, prefix=&amp;#x27;&amp;#x27;):
     @wraps(func)
     def wrapper(*args, **kwargs):
         cache_key = get_cache_key(prefix or func.__name__, *args, **kwargs)
@@ -177,7 +248,7 @@ def cache_func(func, timeout=500, prefix=&amp;#39;&amp;#39;):
                 <title>Условные подзапросы в Джанго</title>
                 <link rel="alternate" href="http://blog.trukhanov.net/Uslovnye-podzaprosy-v-Django/" type="text/html" />
                 <id>http://blog.trukhanov.net/Uslovnye-podzaprosy-v-Django/</id>
-                <updated>2013-08-18T20:30:00Z</updated>
+                <updated>2013-08-18T20:36:00Z</updated>
                 
                 <summary type="html">Часто к моделям в Джанго нужно дописывать вычисляемые свойства (например: &lt;code&gt;has_users&lt;/code&gt;, &lt;code&gt;has_votes&lt;/code&gt;, &lt;code&gt;articles_count&lt;/code&gt;, &lt;code&gt;avg_price&lt;/code&gt; и т.д.). Как правило эти свойства вычисляются по какому-либо условию на основании полей модели или зависимых моделей, которые можно подтянуть с помощью &lt;code&gt;select_related&lt;/code&gt; и это не приведет к увеличению числа запросов к базе данных. Но иногда необходимо вычислять такие свойства на основании данных из обратных связей (см. &lt;a href=&#34;https://docs.djangoproject.com/en/1.5/ref/models/relations/#django.db.models.fields.related.RelatedManager&#34;&gt;RelatedManager&lt;/a&gt;). В таких случаях простой способ с написанием дополнительных методов к модели может привести к линейному увеличению запросов к базе пропорционально увеличению количества объектов этой модели на странице.</summary>
                 <content type="html">&lt;p&gt;Часто к моделям в Джанго нужно дописывать вычисляемые свойства (например: &lt;code&gt;has_users&lt;/code&gt;, &lt;code&gt;has_votes&lt;/code&gt;, &lt;code&gt;articles_count&lt;/code&gt;, &lt;code&gt;avg_price&lt;/code&gt; и т.д.). Как правило эти свойства вычисляются по какому-либо условию на основании полей модели или зависимых моделей, которые можно подтянуть с помощью &lt;code&gt;select_related&lt;/code&gt; и это не приведет к увеличению числа запросов к базе данных. Но иногда необходимо вычислять такие свойства на основании данных из обратных связей (см. &lt;a href=&#34;https://docs.djangoproject.com/en/1.5/ref/models/relations/#django.db.models.fields.related.RelatedManager&#34;&gt;RelatedManager&lt;/a&gt;). В таких случаях простой способ с написанием дополнительных методов к модели может привести к линейному увеличению запросов к базе пропорционально увеличению количества объектов этой модели на странице.&lt;/p&gt;
@@ -195,14 +266,14 @@ from django.db import models
 
 class Poll(models.Model):
     question = models.CharField(max_length=200)
-    pub_date = models.DateTimeField(&amp;#39;date published&amp;#39;, auto_now_add=True)
+    pub_date = models.DateTimeField(&amp;#x27;date published&amp;#x27;, auto_now_add=True)
 
     def __str__(self):
         return self.question
 
 
 class Choice(models.Model):
-    poll = models.ForeignKey(Poll, related_name=&amp;#39;choices&amp;#39;)
+    poll = models.ForeignKey(Poll, related_name=&amp;#x27;choices&amp;#x27;)
     choice_text = models.CharField(max_length=200)
     votes = models.IntegerField(default=0)
 
@@ -224,11 +295,11 @@ class PollListView(ListView):
 
     def get_queryset(self):
         qs = super(PollListView, self).get_queryset()
-        return qs.annotate(is_popular=Count(&amp;#39;choices&amp;#39;, only=Q(choices__votes__gt=3)))
+        return qs.annotate(is_popular=Count(&amp;#x27;choices&amp;#x27;, only=Q(choices__votes__gt=3)))
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;С помощью этого кода каждому объекту модели &lt;code&gt;Poll&lt;/code&gt; будет добавлено поле &lt;code&gt;is_popular&lt;/code&gt;, которое по факту будет целочисленным, но использовать его можно и как булевое. Тогда в шаблоне можно помечать популярные опросы например так:&lt;/p&gt;
 &lt;pre&gt;&lt;code data-lang=&#34;django&#34;&gt;{% for poll in poll_list %}
-    &amp;lt;p&amp;gt;{{ poll }} {% if poll.is_popular %}(Popular){% endif %}&amp;lt;&amp;#47;p&amp;gt;
+    &amp;lt;p&amp;gt;{{ poll }} {% if poll.is_popular %}(Popular){% endif %}&amp;lt;&amp;#x2F;p&amp;gt;
 {% endfor %}
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;В таком случае на странице будет только один запрос, а выглядеть он будет примерно так:&lt;/p&gt;
@@ -256,9 +327,9 @@ class PollListView(ListView):
 
     def get_queryset(self):
         qs = super(PollListView, self).get_queryset()
-        return qs.extra(select={&amp;#39;is_popular&amp;#39;: &amp;#39;SELECT COUNT(*) FROM &amp;quot;polls_choice&amp;quot; &amp;#39;
-                                              &amp;#39;WHERE &amp;quot;polls_choice&amp;quot;.&amp;quot;poll_id&amp;quot; = &amp;quot;polls_poll&amp;quot;.&amp;quot;id&amp;quot; &amp;#39;
-                                              &amp;#39;AND &amp;quot;polls_choice&amp;quot;.&amp;quot;votes&amp;quot; &amp;gt; %s&amp;#39;},
+        return qs.extra(select={&amp;#x27;is_popular&amp;#x27;: &amp;#x27;SELECT COUNT(*) FROM &amp;quot;polls_choice&amp;quot; &amp;#x27;
+                                              &amp;#x27;WHERE &amp;quot;polls_choice&amp;quot;.&amp;quot;poll_id&amp;quot; = &amp;quot;polls_poll&amp;quot;.&amp;quot;id&amp;quot; &amp;#x27;
+                                              &amp;#x27;AND &amp;quot;polls_choice&amp;quot;.&amp;quot;votes&amp;quot; &amp;gt; %s&amp;#x27;},
                         select_params=[3])
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Следует отметить, что все подстановки нужно делать через специальный аргумент: &lt;code&gt;select_params&lt;/code&gt;, а самом запросе вставлять &lt;code&gt;%s&lt;/code&gt; для указания места подставновки. Таким образом драйвер базы данных экранирует эти параметры, что позволяет избежать &lt;a href=&#34;http://ru.wikipedia.org/wiki/%D0%92%D0%BD%D0%B5%D0%B4%D1%80%D0%B5%D0%BD%D0%B8%D0%B5_SQL-%D0%BA%D0%BE%D0%B4%D0%B0&#34;&gt;SQL-инъекций&lt;/a&gt;. Результирующий запрос будет выглядеть следующим образом:&lt;/p&gt;
@@ -280,7 +351,7 @@ FROM &amp;quot;polls_poll&amp;quot;
                 <title>Простой способ выделения активной вкладки меню в Джанго</title>
                 <link rel="alternate" href="http://blog.trukhanov.net/Prostoy-sposob-vydeleniya-aktivnoy-vrladki-menu-v-Django/" type="text/html" />
                 <id>http://blog.trukhanov.net/Prostoy-sposob-vydeleniya-aktivnoy-vrladki-menu-v-Django/</id>
-                <updated>2013-07-12T20:30:00Z</updated>
+                <updated>2013-07-12T20:37:00Z</updated>
                 
                 <summary type="html">Одна из частых задач при разработке типичного сайта - на разных страницах выделять текущий активный раздел сайта или меню. Это могут быть как просто разделы меню так и вкладки или что-то другое. Как правило для выделения вкладки прописывается дополнительный класс &lt;code&gt;active&lt;/code&gt; в css и выделением является присваивание этого класа нужному html-блоку при генерации страниц.</summary>
                 <content type="html">&lt;p&gt;Одна из частых задач при разработке типичного сайта - на разных страницах выделять текущий активный раздел сайта или меню. Это могут быть как просто разделы меню так и вкладки или что-то другое. Как правило для выделения вкладки прописывается дополнительный класс &lt;code&gt;active&lt;/code&gt; в css и выделением является присваивание этого класа нужному html-блоку при генерации страниц.&lt;/p&gt;
@@ -296,26 +367,26 @@ FROM &amp;quot;polls_poll&amp;quot;
         if self.active_tab is None:
             raise ImproperlyConfigured(
                 &amp;quot;ActiveTabMixin requires either a definition of &amp;quot;
-                &amp;quot;&amp;#39;active_tab&amp;#39; or an implementation of &amp;#39;get_active_tab()&amp;#39;&amp;quot;)
+                &amp;quot;&amp;#x27;active_tab&amp;#x27; or an implementation of &amp;#x27;get_active_tab()&amp;#x27;&amp;quot;)
         return self.active_tab
 
     def get_context_data(self, **kwargs):
         context = super(ActiveTabMixin, self).get_context_data(**kwargs)
-        context[&amp;#39;active_tab&amp;#39;] = self.get_active_tab()
+        context[&amp;#x27;active_tab&amp;#x27;] = self.get_active_tab()
         return context
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;После чего можно &amp;ldquo;подмешивать&amp;rdquo; его в класс представлений (views) и с помощью атрибута класса определять активную вкладку для данной страницы.&lt;/p&gt;
 &lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;class MeetingDetailView(ActiveTabMixin, DetailView):
     model = Meeting
-    active_tab = &amp;#39;meetings&amp;#39;
+    active_tab = &amp;#x27;meetings&amp;#x27;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Во избежание дублирования кода можно выделить специальный шаблон &lt;code&gt;menu.html&lt;/code&gt; и в нем генерировать вкладки, выделяя активную с помощью вышеописанного метода.&lt;/p&gt;
-&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;&amp;lt;ul&amp;gt;
-    &amp;lt;li{% if active_tab == &amp;#39;dashboard&amp;#39; %} class=&amp;quot;active&amp;quot;{% endif %}&amp;gt;&amp;lt;a href=&amp;quot;#&amp;quot;&amp;gt;Dashboard&amp;lt;&amp;#47;a&amp;gt;&amp;lt;&amp;#47;li&amp;gt;
-    &amp;lt;li{% if active_tab == &amp;#39;calendar&amp;#39; %} class=&amp;quot;active&amp;quot;{% endif %}&amp;gt;&amp;lt;a href=&amp;quot;#&amp;quot;&amp;gt;Calendar&amp;lt;&amp;#47;a&amp;gt;&amp;lt;&amp;#47;li&amp;gt;
-    &amp;lt;li{% if active_tab == &amp;#39;meetings&amp;#39; %} class=&amp;quot;active&amp;quot;{% endif %}&amp;gt;&amp;lt;a href=&amp;quot;#&amp;quot;&amp;gt;Meetings&amp;lt;&amp;#47;a&amp;gt;&amp;lt;&amp;#47;li&amp;gt;
-    &amp;lt;li{% if active_tab == &amp;#39;archives&amp;#39; %} class=&amp;quot;active&amp;quot;{% endif %}&amp;gt;&amp;lt;a href=&amp;quot;#&amp;quot;&amp;gt;Archives&amp;lt;&amp;#47;a&amp;gt;&amp;lt;&amp;#47;li&amp;gt;
-&amp;lt;&amp;#47;ul&amp;gt;
+&lt;pre&gt;&lt;code data-lang=&#34;django&#34;&gt;&amp;lt;ul&amp;gt;
+    &amp;lt;li{% if active_tab == &amp;#x27;dashboard&amp;#x27; %} class=&amp;quot;active&amp;quot;{% endif %}&amp;gt;&amp;lt;a href=&amp;quot;#&amp;quot;&amp;gt;Dashboard&amp;lt;&amp;#x2F;a&amp;gt;&amp;lt;&amp;#x2F;li&amp;gt;
+    &amp;lt;li{% if active_tab == &amp;#x27;calendar&amp;#x27; %} class=&amp;quot;active&amp;quot;{% endif %}&amp;gt;&amp;lt;a href=&amp;quot;#&amp;quot;&amp;gt;Calendar&amp;lt;&amp;#x2F;a&amp;gt;&amp;lt;&amp;#x2F;li&amp;gt;
+    &amp;lt;li{% if active_tab == &amp;#x27;meetings&amp;#x27; %} class=&amp;quot;active&amp;quot;{% endif %}&amp;gt;&amp;lt;a href=&amp;quot;#&amp;quot;&amp;gt;Meetings&amp;lt;&amp;#x2F;a&amp;gt;&amp;lt;&amp;#x2F;li&amp;gt;
+    &amp;lt;li{% if active_tab == &amp;#x27;archives&amp;#x27; %} class=&amp;quot;active&amp;quot;{% endif %}&amp;gt;&amp;lt;a href=&amp;quot;#&amp;quot;&amp;gt;Archives&amp;lt;&amp;#x2F;a&amp;gt;&amp;lt;&amp;#x2F;li&amp;gt;
+&amp;lt;&amp;#x2F;ul&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Этот способ не универсальный и работает только в простых случаях одноуровневого меню. Можно такой же функционал завязать на URL текущей страницы, привязавшись либо к &lt;code&gt;namespace&lt;/code&gt; либо к имени URL. Но такой способ подразумевает детальную синхронизацию URL-ов и шаблонов.&lt;/p&gt;
 </content>
@@ -325,7 +396,7 @@ FROM &amp;quot;polls_poll&amp;quot;
                 <title>Кеширование методов модели в Джанго в пределах одного запроса</title>
                 <link rel="alternate" href="http://blog.trukhanov.net/Keshirovanie-metodov-modeli-v-Django/" type="text/html" />
                 <id>http://blog.trukhanov.net/Keshirovanie-metodov-modeli-v-Django/</id>
-                <updated>2013-07-08T20:30:00Z</updated>
+                <updated>2013-07-08T20:32:00Z</updated>
                 
                 <summary type="html">В книге &lt;a href=&#34;http://django.2scoops.org/&#34;&gt;Two scoops of Django&lt;/a&gt; советуют всю бизнесовую логику держать в моделях. И я с этим согласен, это действительно удобно. Один из самых простых методов реализации этого совета - написание дополнительных методов в модели для добавления необходимого поведения. Эти методы потом можно использовать как в контроллерах (views) так и в представлениях (templates).</summary>
                 <content type="html">&lt;p&gt;В книге &lt;a href=&#34;http://django.2scoops.org/&#34;&gt;Two scoops of Django&lt;/a&gt; советуют всю бизнесовую логику держать в моделях. И я с этим согласен, это действительно удобно. Один из самых простых методов реализации этого совета - написание дополнительных методов в модели для добавления необходимого поведения. Эти методы потом можно использовать как в контроллерах (views) так и в представлениях (templates).&lt;/p&gt;
@@ -338,7 +409,7 @@ FROM &amp;quot;polls_poll&amp;quot;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Результат выполнения этого метода необходимо показать в разных частях страницы (возле логина, рядом с кнопкой перехода на страницу сообщений, еще где-нибудь). Соответственно каждый вызов метода будет делать запрос к базе данных. Чтобы этого избежать можно использовать кеширование результата запроса. Стандартная схема выглядит следующим образом:&lt;/p&gt;
 &lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;def get_unread_message_count(self):
-    if not hasattr(self, &amp;#39;_cached_unread_message_count&amp;#39;):
+    if not hasattr(self, &amp;#x27;_cached_unread_message_count&amp;#x27;):
         self._cached_unread_message_count = self.messages.filter(is_read=False).count()
     return self._cached_unread_message_count
 &lt;/code&gt;&lt;/pre&gt;
@@ -352,11 +423,11 @@ FROM &amp;quot;polls_poll&amp;quot;
                 <title>Таймстампы в пайтоне</title>
                 <link rel="alternate" href="http://blog.trukhanov.net/Python-timestamps/" type="text/html" />
                 <id>http://blog.trukhanov.net/Python-timestamps/</id>
-                <updated>2013-06-09T20:29:00Z</updated>
+                <updated>2013-06-09T20:32:00Z</updated>
                 
-                <summary type="html">Однажды в одном проекте мне понадобилось преобразовать &lt;code&gt;utc datetime&lt;/code&gt; в &lt;code&gt;unix timestamp&lt;/code&gt;.&lt;br&gt;
+                <summary type="html">Однажды в одном проекте мне понадобилось преобразовать &lt;code&gt;utc datetime&lt;/code&gt; в &lt;code&gt;unix timestamp&lt;/code&gt;.
 Сразу оговорюсь что описанное ниже относится к Python 2.7.</summary>
-                <content type="html">&lt;p&gt;Однажды в одном проекте мне понадобилось преобразовать &lt;code&gt;utc datetime&lt;/code&gt; в &lt;code&gt;unix timestamp&lt;/code&gt;.&lt;br&gt;
+                <content type="html">&lt;p&gt;Однажды в одном проекте мне понадобилось преобразовать &lt;code&gt;utc datetime&lt;/code&gt; в &lt;code&gt;unix timestamp&lt;/code&gt;.
 Сразу оговорюсь что описанное ниже относится к Python 2.7.&lt;/p&gt;
 
 &lt;p&gt;Если просто погуглить, то везде советуют следующий способ:&lt;/p&gt;
@@ -366,7 +437,7 @@ import time
 now = datetime.now()
 timestamp = time.mktime(now.timetuple())
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Все это правильно, но кто же пользуется локальным временем?&lt;br&gt;
+&lt;p&gt;Все это правильно, но кто же пользуется локальным временем?
 У меня естественно время в utc, поэтому следующий код с точки зрения использования модуля &lt;code&gt;time&lt;/code&gt; является неправильным:&lt;/p&gt;
 &lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;from datetime import datetime
 import time
@@ -381,17 +452,40 @@ timestamp = int(time.time())
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;И действительно, если погуглить на тему как получить юникс таймстамп в пайтоне, то именно это вы и найдете, однако такой способ правильный только в том случае, если вы везде используете локальное время, но кто же его использует? Соответственно разница между моим таймстампом и таймстампом этого программиста получилась 3 часа.&lt;/p&gt;
 &lt;h1&gt;Документация&lt;/h1&gt;
-&lt;p&gt;Далее обращаемся к &lt;a href=&#34;http://docs.python.org/2/library/time.html&#34;&gt;документации пайтона по модулю time&lt;/a&gt; и обнаруживаем, что к функции &lt;code&gt;time.time()&lt;/code&gt; вообще не написано какое время она возвращает - локальное или глобальное. Зато есть две другие функции: &lt;code&gt;time.localtime()&lt;/code&gt; и &lt;code&gt;time.gmtime()&lt;/code&gt;. Тут из названия очевидно какое время какая функция возвращает. Но! Обе эти функции возвращают не число, а &lt;a href=&#34;http://docs.python.org/2/library/time.html#time.struct_time&#34;&gt;struct_time&lt;/a&gt;.&lt;br&gt;
+&lt;p&gt;Далее обращаемся к &lt;a href=&#34;http://docs.python.org/2/library/time.html&#34;&gt;документации пайтона по модулю time&lt;/a&gt; и обнаруживаем, что к функции &lt;code&gt;time.time()&lt;/code&gt; вообще не написано какое время она возвращает - локальное или глобальное. Зато есть две другие функции: &lt;code&gt;time.localtime()&lt;/code&gt; и &lt;code&gt;time.gmtime()&lt;/code&gt;. Тут из названия очевидно какое время какая функция возвращает. Но! Обе эти функции возвращают не число, а &lt;a href=&#34;http://docs.python.org/2/library/time.html#time.struct_time&#34;&gt;struct_time&lt;/a&gt;.
 А если почитать документацию к функции &lt;code&gt;time.mktime()&lt;/code&gt;, то выясняется что эта функция ожидает в качестве аргумента &lt;a href=&#34;http://docs.python.org/2/library/time.html#time.struct_time&#34;&gt;struct_time&lt;/a&gt; в &lt;strong&gt;локальном&lt;/strong&gt; времени. Логично предположить, что должна быть симметричная функция &lt;code&gt;time.mktimegm()&lt;/code&gt; или что-то подобное. Но не тут то было. Оказывается чтобы преобразовать &lt;a href=&#34;http://docs.python.org/2/library/time.html#time.struct_time&#34;&gt;struct_time&lt;/a&gt; в &lt;strong&gt;глобальном&lt;/strong&gt; времени необходимо обращаться к функции из совершенно другого модуля, а именно к &lt;code&gt;calendar.timegm()&lt;/code&gt;. Что за черт?&lt;/p&gt;
 
 &lt;p&gt;В документации даже можно найти такую табличку:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;From                     | To                        | Use
--------------------------|---------------------------|------------------
-seconds since the epoch  | struct_time in UTC        | gmtime()
-seconds since the epoch  | struct_time in local time | localtime()
-struct_time in UTC       | seconds since the epoch   | calendar.timegm()
-struct_time in local time| seconds since the epoch   | mktime()
-&lt;/code&gt;&lt;/pre&gt;&lt;h1&gt;Неочевидности&lt;/h1&gt;&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;import time
+
+&lt;table&gt;&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;From&lt;/th&gt;
+&lt;th&gt;To&lt;/th&gt;
+&lt;th&gt;Use&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;seconds since the epoch&lt;/td&gt;
+&lt;td&gt;struct_time in UTC&lt;/td&gt;
+&lt;td&gt;gmtime()&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;seconds since the epoch&lt;/td&gt;
+&lt;td&gt;struct_time in local time&lt;/td&gt;
+&lt;td&gt;localtime()&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;struct_time in UTC&lt;/td&gt;
+&lt;td&gt;seconds since the epoch&lt;/td&gt;
+&lt;td&gt;calendar.timegm()&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;struct_time in local time&lt;/td&gt;
+&lt;td&gt;seconds since the epoch&lt;/td&gt;
+&lt;td&gt;mktime()&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;&lt;/table&gt;
+&lt;h1&gt;Неочевидности&lt;/h1&gt;&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;import time
 import calendar
 from datetime import datetime
 
@@ -402,8 +496,8 @@ ts3 = time.mktime(time.gmtime())  # неправильно!
 ts4 = calendar.timegm(time.gmtime())  # правильно!
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;Казалось бы, теперь все прояснилось и стало все понятно, однако:&lt;/p&gt;
-&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;print((ts1 - ts2) &amp;#47; 60 &amp;#47; 60)  # -3.0
-print((ts3 - ts4) &amp;#47; 60 &amp;#47; 60)  # -2.0
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;print((ts1 - ts2) &amp;#x2F; 60 &amp;#x2F; 60)  # -3.0
+print((ts3 - ts4) &amp;#x2F; 60 &amp;#x2F; 60)  # -2.0
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;В первом случае разница между правильным и неправильным вариантом оказалась 3 часа, а во втором случае 2 часа.&lt;/p&gt;
 &lt;h1&gt;Выводы&lt;/h1&gt;

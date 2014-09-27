@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="author" content="Timofey Trukhanov">
+<meta name="description" content="Персональный блог Тимофея Труханова">
+<meta name="generator" content="mynt v0.3.1">
+
+<link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon">
+
+<link rel="alternate" href="/feed.xml" type="application/atom+xml">
+
+<link rel="stylesheet" href="/assets/css/screen.css" type="text/css">
+<link rel="stylesheet" href="/assets/css/pygments.css" type="text/css">
+
+
+    <script type="text/javascript">
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-41614976-1']);
+        _gaq.push(['_trackPageview']);
+
+        (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
+
+
+    <title>Run synchronous code on tornado asynchronously &ndash; Труханов блог</title>
+</head>
+
+<body>
+    <div id="container">
+        <div id="nav">
+            <ul>
+                <li><a href="/">Blog</a></li>
+                <li><a href="/archives/">Archives</a></li>
+                <li><a href="/feed.xml">Feed</a></li>
+            </ul>
+                <ul id="social">
+            
+                    
+                    
+                    <li><a href="https://github.com/geerk"><img src="/assets/images/social/github.png" width="16" height="16" alt="GitHub"></a></li>
+                    
+                    
+                    
+                    
+                    <li><a href="https://twitter.com/#!/geerk"><img src="/assets/images/social/twitter.png" width="16" height="16" alt="Twitter"></a></li>
+            
+                    <li><a href="http://masters.donntu.edu.ua/2013/fknt/trukhanov/">ДонНТУ</a></li>
+                </ul>
+        </div>
+
+        <div id="header">
+            <h1><a href="/">Труханов блог</a></h1>
+            
+        </div>
+
+        <div id="content">
+            
+    <div class="item post">
+        <div class="header">
+            <h1>Run synchronous code on tornado asynchronously</h1>
+            <h2>Friday, September 26, 2014 <span>&raquo;</span> <a href="/tags/futures/">futures</a>, <a href="/tags/python/">python</a>, <a href="/tags/tornado/">tornado</a></h2>
+        </div>
+
+        <div class="body">
+            <p>Have you ever needed to run synchronous code in asynchronous way on tornado? I have needed.</p>
+
+<p>As you may know, tornado is an asynchronous library, so you have to write code in such way to not block ioloop for long time, because otherwise it will cause to stop processing other requests.</p>
+
+<p>Usually for long operations you already have async libraries, such as database drivers or <a href="http://www.tornadoweb.org/en/stable/httpclient.html#tornado.httpclient.AsyncHTTPClient">AsyncHTTPClient</a> for http requests. But rarely you need to run some legacy (or unreplacable) synchronouse code inside your <code>RequestHandler</code>. In this case tornado does not provide simple way to do this.</p>
+
+<p>Recently I&rsquo;ve found a helper function in tornado&rsquo;s code called <code>run_on_executor</code> and looking to documentation it seems to be what I want to run synchronous code. But it requires some extra effort to make it work.</p>
+
+<p>Let&rsquo;s read the <a href="http://www.tornadoweb.org/en/stable/concurrent.html#tornado.concurrent.run_on_executor">documentation</a>:</p>
+
+<blockquote>
+<p>Decorator to run a synchronous method asynchronously on an executor.</p>
+
+<p>The decorated method may be called with a <code>callback</code> keyword argument and returns a future.</p>
+
+<p>This decorator should be used only on methods of objects with attributes <code>executor</code> and <code>io_loop</code>.</p>
+</blockquote>
+
+<p>So we need some object, which will have some <code>executor</code> and <code>io_loop</code> attributes. It is unclear what is <code>executor</code> mean. Digging into source code of tornado I found <code>DummyExecutor</code>, which implements two methods: <code>submit</code> and <code>shutdown</code>. Googling some time I found that Python3 introduced new module: <a href="https://docs.python.org/dev/library/concurrent.futures.html">concurrent.futures</a>. This module has two executors: <code>ThreadPoolExecutor</code> and <code>ProcessPoolExecutor</code>. How you may guess from names they implements executors for threads and processes respectively. And executor is just an object which takes some function and executes it. In first case in separate thread from thread pool, in second - in separate process from process pool.</p>
+
+<p>Fortunately this module is available as separate package for Python2 too. You can install it using <code>pip install futures</code>.</p>
+
+<p>Now we know what executor is, we know also what <a href="http://www.tornadoweb.org/en/stable/ioloop.html">io_loop</a> is, so we can create this object to run synchronous code asynchronously on executor. Let&rsquo;s pretend we have some legacy SOAP-client, which makes some calls to remote API. In this case better choice would be ThreadPoolExecutor, because we do not need a lot of CPU for HTTP requests. The code will look like this:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21</pre></div></td><td class="code"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">concurrent.futures</span> <span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
+<span class="kn">from</span> <span class="nn">tornado</span> <span class="kn">import</span> <span class="n">concurrent</span><span class="p">,</span> <span class="n">ioloop</span>
+
+
+<span class="k">class</span> <span class="nc">LegacySOAPClientAsync</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">__instance</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">cls</span><span class="o">.</span><span class="n">__instance</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">cls</span><span class="o">.</span><span class="n">__instance</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span>
+                <span class="n">LegacySOAPClientAsync</span><span class="p">,</span> <span class="n">cls</span><span class="p">)</span><span class="o">.</span><span class="n">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="o">.</span><span class="n">__instance</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">executor</span> <span class="o">=</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">io_loop</span> <span class="o">=</span> <span class="n">ioloop</span><span class="o">.</span><span class="n">IOLoop</span><span class="o">.</span><span class="n">current</span><span class="p">()</span>
+
+    <span class="nd">@concurrent.run_on_executor</span>
+    <span class="k">def</span> <span class="nf">method1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">):</span>
+        <span class="n">soap_client</span> <span class="o">=</span> <span class="n">get_soap_client</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">soap_client</span><span class="o">.</span><span class="n">method1</span><span class="p">(</span><span class="n">arg1</span><span class="p">,</span> <span class="n">arg2</span><span class="p">)</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>I made this class singleton to use same thread pool for all cases. Now <code>method1</code> can be called asynchronously and will be executed in separate thread not blocking main ioloop. You can control max number of workers (threads) in the thread pool by <code>max_workers</code> argument. Now this legacy API may be asynchronously called from coroutines, like this:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11</pre></div></td><td class="code"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">tornado</span> <span class="kn">import</span> <span class="n">gen</span><span class="p">,</span> <span class="n">web</span>
+
+<span class="k">class</span> <span class="nc">SomeHandler</span><span class="p">(</span><span class="n">web</span><span class="o">.</span><span class="n">RequestHandler</span><span class="p">):</span>
+
+    <span class="nd">@gen.coroutine</span>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">legacy_api</span> <span class="o">=</span> <span class="n">LegacySOAPClientAsync</span><span class="p">()</span>
+        <span class="c"># call legacy client asynchronously</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">legacy_api</span><span class="o">.</span><span class="n">method1</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">,</span> <span class="s">&#39;bar&#39;</span><span class="p">)</span>
+        <span class="c"># do some business logic here</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">finish</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>  <span class="c"># return result</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>If you have CPU-bound code more relevant will be to use <code>ProcessPoolExecutor</code>, but only if you have more then one CPU-core on your machine.</p>
+
+<p>Of course you can improve this code, for example not instantiating API client on every call, but this is out of scope of this article.</p>
+
+        </div>
+    </div>
+
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'trukhanovblog'; // required: replace example with your forum shortname
+        var disqus_identifier = '/Run-synchronous-code-on-tornado-asynchronously/';
+        var disqus_title = 'Run synchronous code on tornado asynchronously';
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+        </div>
+
+        <div id="footer">
+        <p style="float: right; margin-top: 0px;"><a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.ru"><img alt="Лицензия Creative Commons" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/80x15.png" /></a></p><p>Copyright &copy; 2013-2014 Timofey Trukhanov &ndash; powered by <a href="http://mynt.mirroredwhite.com/">mynt</a></p>
+        </div>
+    </div>
+</body>
+</html>

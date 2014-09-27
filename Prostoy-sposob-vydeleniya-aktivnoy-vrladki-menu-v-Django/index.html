@@ -6,7 +6,7 @@
 
 <meta name="author" content="Timofey Trukhanov">
 <meta name="description" content="Персональный блог Тимофея Труханова">
-<meta name="generator" content="mynt v0.2.3">
+<meta name="generator" content="mynt v0.3.1">
 
 <link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon">
 
@@ -121,12 +121,12 @@
 3
 4
 5
-6</pre></div></td><td class="code"><div class="highlight"><pre><span class="o">&lt;</span><span class="n">ul</span><span class="o">&gt;</span>
-    <span class="o">&lt;</span><span class="n">li</span><span class="p">{</span><span class="o">%</span> <span class="k">if</span> <span class="n">active_tab</span> <span class="o">==</span> <span class="s">&#39;dashboard&#39;</span> <span class="o">%</span><span class="p">}</span> <span class="n">class</span><span class="o">=</span><span class="s">&quot;active&quot;</span><span class="p">{</span><span class="o">%</span> <span class="n">endif</span> <span class="o">%</span><span class="p">}</span><span class="o">&gt;&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s">&quot;#&quot;</span><span class="o">&gt;</span><span class="n">Dashboard</span><span class="o">&lt;/</span><span class="n">a</span><span class="o">&gt;&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
-    <span class="o">&lt;</span><span class="n">li</span><span class="p">{</span><span class="o">%</span> <span class="k">if</span> <span class="n">active_tab</span> <span class="o">==</span> <span class="s">&#39;calendar&#39;</span> <span class="o">%</span><span class="p">}</span> <span class="n">class</span><span class="o">=</span><span class="s">&quot;active&quot;</span><span class="p">{</span><span class="o">%</span> <span class="n">endif</span> <span class="o">%</span><span class="p">}</span><span class="o">&gt;&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s">&quot;#&quot;</span><span class="o">&gt;</span><span class="n">Calendar</span><span class="o">&lt;/</span><span class="n">a</span><span class="o">&gt;&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
-    <span class="o">&lt;</span><span class="n">li</span><span class="p">{</span><span class="o">%</span> <span class="k">if</span> <span class="n">active_tab</span> <span class="o">==</span> <span class="s">&#39;meetings&#39;</span> <span class="o">%</span><span class="p">}</span> <span class="n">class</span><span class="o">=</span><span class="s">&quot;active&quot;</span><span class="p">{</span><span class="o">%</span> <span class="n">endif</span> <span class="o">%</span><span class="p">}</span><span class="o">&gt;&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s">&quot;#&quot;</span><span class="o">&gt;</span><span class="n">Meetings</span><span class="o">&lt;/</span><span class="n">a</span><span class="o">&gt;&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
-    <span class="o">&lt;</span><span class="n">li</span><span class="p">{</span><span class="o">%</span> <span class="k">if</span> <span class="n">active_tab</span> <span class="o">==</span> <span class="s">&#39;archives&#39;</span> <span class="o">%</span><span class="p">}</span> <span class="n">class</span><span class="o">=</span><span class="s">&quot;active&quot;</span><span class="p">{</span><span class="o">%</span> <span class="n">endif</span> <span class="o">%</span><span class="p">}</span><span class="o">&gt;&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s">&quot;#&quot;</span><span class="o">&gt;</span><span class="n">Archives</span><span class="o">&lt;/</span><span class="n">a</span><span class="o">&gt;&lt;/</span><span class="n">li</span><span class="o">&gt;</span>
-<span class="o">&lt;/</span><span class="n">ul</span><span class="o">&gt;</span>
+6</pre></div></td><td class="code"><div class="highlight"><pre><span class="x">&lt;ul&gt;</span>
+<span class="x">    &lt;li</span><span class="cp">{%</span> <span class="k">if</span> <span class="nv">active_tab</span> <span class="o">==</span> <span class="s1">&#39;dashboard&#39;</span> <span class="cp">%}</span><span class="x"> class=&quot;active&quot;</span><span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span><span class="x">&gt;&lt;a href=&quot;#&quot;&gt;Dashboard&lt;/a&gt;&lt;/li&gt;</span>
+<span class="x">    &lt;li</span><span class="cp">{%</span> <span class="k">if</span> <span class="nv">active_tab</span> <span class="o">==</span> <span class="s1">&#39;calendar&#39;</span> <span class="cp">%}</span><span class="x"> class=&quot;active&quot;</span><span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span><span class="x">&gt;&lt;a href=&quot;#&quot;&gt;Calendar&lt;/a&gt;&lt;/li&gt;</span>
+<span class="x">    &lt;li</span><span class="cp">{%</span> <span class="k">if</span> <span class="nv">active_tab</span> <span class="o">==</span> <span class="s1">&#39;meetings&#39;</span> <span class="cp">%}</span><span class="x"> class=&quot;active&quot;</span><span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span><span class="x">&gt;&lt;a href=&quot;#&quot;&gt;Meetings&lt;/a&gt;&lt;/li&gt;</span>
+<span class="x">    &lt;li</span><span class="cp">{%</span> <span class="k">if</span> <span class="nv">active_tab</span> <span class="o">==</span> <span class="s1">&#39;archives&#39;</span> <span class="cp">%}</span><span class="x"> class=&quot;active&quot;</span><span class="cp">{%</span> <span class="k">endif</span> <span class="cp">%}</span><span class="x">&gt;&lt;a href=&quot;#&quot;&gt;Archives&lt;/a&gt;&lt;/li&gt;</span>
+<span class="x">&lt;/ul&gt;</span>
 </pre></div>
 </td></tr></table></div></div>
 <p>Этот способ не универсальный и работает только в простых случаях одноуровневого меню. Можно такой же функционал завязать на URL текущей страницы, привязавшись либо к <code>namespace</code> либо к имени URL. Но такой способ подразумевает детальную синхронизацию URL-ов и шаблонов.</p>
@@ -154,7 +154,7 @@
         </div>
 
         <div id="footer">
-        <p style="float: right; margin-top: 0px;"><a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.ru"><img alt="Лицензия Creative Commons" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/80x15.png" /></a></p><p>Copyright &copy; 2014 Timofey Trukhanov &ndash; powered by <a href="http://mynt.mirroredwhite.com/">mynt</a></p>
+        <p style="float: right; margin-top: 0px;"><a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.ru"><img alt="Лицензия Creative Commons" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/80x15.png" /></a></p><p>Copyright &copy; 2013-2014 Timofey Trukhanov &ndash; powered by <a href="http://mynt.mirroredwhite.com/">mynt</a></p>
         </div>
     </div>
 </body>
