@@ -6,7 +6,7 @@
         <link rel="alternate" href="http://blog.trukhanov.net/" />
         <link rel="self" href="http://blog.trukhanov.net/feed.xml" type="application/atom+xml" />
         <id>http://blog.trukhanov.net/</id>
-        <updated>2014-09-27T10:18:57Z</updated>
+        <updated>2014-09-27T10:37:55Z</updated>
         
         <author>
             <name>Timofey Trukhanov</name>
@@ -19,16 +19,16 @@
                 <title>Running synchronous code on tornado asynchronously</title>
                 <link rel="alternate" href="http://blog.trukhanov.net/Running-synchronous-code-on-tornado-asynchronously/" type="text/html" />
                 <id>http://blog.trukhanov.net/Running-synchronous-code-on-tornado-asynchronously/</id>
-                <updated>2014-09-26T10:18:00Z</updated>
+                <updated>2014-09-26T10:28:00Z</updated>
                 
                 <summary type="html">Have you ever needed to run synchronous code in asynchronous way on tornado? I had such a need.</summary>
                 <content type="html">&lt;p&gt;Have you ever needed to run synchronous code in asynchronous way on tornado? I had such a need.&lt;/p&gt;
 
 &lt;p&gt;As you may know, tornado is an asynchronous library, so you have to write code in the way that doesn&amp;rsquo;t block ioloop for a long time, because otherwise it will cause processing other requests to stop.&lt;/p&gt;
 
-&lt;p&gt;Usually for long operations you already have async libraries, such as database drivers or &lt;a href=&#34;http://www.tornadoweb.org/en/stable/httpclient.html#tornado.httpclient.AsyncHTTPClient&#34;&gt;AsyncHTTPClient&lt;/a&gt; for HTTP requests. But sometimes you need to run some legacy (or unreplacable) synchronous code inside your &lt;code&gt;RequestHandler&lt;/code&gt;. In this case, tornado does not provide simple way to do this.&lt;/p&gt;
+&lt;p&gt;Usually for long operations you already have async libraries, such as database drivers or &lt;a href=&#34;http://www.tornadoweb.org/en/stable/httpclient.html#tornado.httpclient.AsyncHTTPClient&#34;&gt;AsyncHTTPClient&lt;/a&gt; for HTTP requests. But sometimes you need to run some legacy (or unreplacable) synchronous code inside your &lt;code&gt;RequestHandler&lt;/code&gt;. In this case, tornado does not provide a simple way to do this.&lt;/p&gt;
 
-&lt;p&gt;Recently I&amp;rsquo;ve found a helper function in tornado&amp;rsquo;s code called &lt;code&gt;run_on_executor&lt;/code&gt; and, looking at documentation, it seems to be what I may need to run synchronous code. But it requires some extra effort to make it work.&lt;/p&gt;
+&lt;p&gt;Recently I&amp;rsquo;ve found a helper function in tornado&amp;rsquo;s code called &lt;code&gt;run_on_executor&lt;/code&gt; and, looking at the documentation, it seems to be what I may need to run synchronous code. But it requires some extra effort to make it work.&lt;/p&gt;
 
 &lt;p&gt;Let&amp;rsquo;s take a look at the &lt;a href=&#34;http://www.tornadoweb.org/en/stable/concurrent.html#tornado.concurrent.run_on_executor&#34;&gt;documentation&lt;/a&gt;:&lt;/p&gt;
 
@@ -40,11 +40,11 @@
 &lt;p&gt;This decorator should be used only on methods of objects with attributes &lt;code&gt;executor&lt;/code&gt; and &lt;code&gt;io_loop&lt;/code&gt;.&lt;/p&gt;
 &lt;/blockquote&gt;
 
-&lt;p&gt;So we need some object that has some &lt;code&gt;executor&lt;/code&gt; and &lt;code&gt;io_loop&lt;/code&gt; attributes. It is unclear what does &lt;code&gt;executor&lt;/code&gt; mean. Digging into the source code of tornado I found &lt;code&gt;DummyExecutor&lt;/code&gt;, which implements two methods: &lt;code&gt;submit&lt;/code&gt; and &lt;code&gt;shutdown&lt;/code&gt;. After some googling I found that Python3 have introduced a new module: &lt;a href=&#34;https://docs.python.org/dev/library/concurrent.futures.html&#34;&gt;concurrent.futures&lt;/a&gt;. This module has two executors: &lt;code&gt;ThreadPoolExecutor&lt;/code&gt; and &lt;code&gt;ProcessPoolExecutor&lt;/code&gt;. As you may guess from the names, they implements executors for threads and processes respectively. And executor is just an object which takes some function and executes it. In the first case, it executes in separate thread from the thread pool, in second - in separate process from the process pool.&lt;/p&gt;
+&lt;p&gt;So we need some object that has some &lt;code&gt;executor&lt;/code&gt; and &lt;code&gt;io_loop&lt;/code&gt; attributes. It is unclear what does &lt;code&gt;executor&lt;/code&gt; mean. Digging into the source code of tornado I found &lt;code&gt;DummyExecutor&lt;/code&gt;, which implements two methods: &lt;code&gt;submit&lt;/code&gt; and &lt;code&gt;shutdown&lt;/code&gt;. After some googling I found that Python3 have introduced a new module: &lt;a href=&#34;https://docs.python.org/dev/library/concurrent.futures.html&#34;&gt;concurrent.futures&lt;/a&gt;. This module has two executors: &lt;code&gt;ThreadPoolExecutor&lt;/code&gt; and &lt;code&gt;ProcessPoolExecutor&lt;/code&gt;. As you may guess from the names, they implement executors for threads and processes respectively. Basically executor is just an object which takes some function and executes it. In the first case, it executes given function in separate thread from the thread pool, in second - in separate process from the process pool.&lt;/p&gt;
 
 &lt;p&gt;Fortunately, this module is available as separate package for Python2 too. You can install it using &lt;code&gt;pip install futures&lt;/code&gt;.&lt;/p&gt;
 
-&lt;p&gt;Now that we know what executor is, we also know what &lt;a href=&#34;http://www.tornadoweb.org/en/stable/ioloop.html&#34;&gt;io_loop&lt;/a&gt; is, so we can create this object to run synchronous code asynchronously on executor. Let&amp;rsquo;s pretend we have some legacy SOAP-client, which makes some calls to remote API. In this case, using &lt;code&gt;ThreadPoolExecutor&lt;/code&gt; would be a better choice, because we do not need a lot of CPU for HTTP requests. The code will look like this:&lt;/p&gt;
+&lt;p&gt;Now that we know what executor is, we also understand what &lt;a href=&#34;http://www.tornadoweb.org/en/stable/ioloop.html&#34;&gt;io_loop&lt;/a&gt; is, so we can create this object to run synchronous code asynchronously on executor. Let&amp;rsquo;s pretend we have some legacy SOAP-client, which makes some calls to remote API. In this case, using &lt;code&gt;ThreadPoolExecutor&lt;/code&gt; would be a better choice, because we do not need a lot of CPU for HTTP requests. The code will look like this:&lt;/p&gt;
 &lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;from concurrent.futures import ThreadPoolExecutor
 from tornado import concurrent, ioloop
 
