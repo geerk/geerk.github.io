@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="author" content="Timofey Trukhanov">
+<meta name="description" content="Персональный блог Тимофея Труханова">
+<meta name="generator" content="mynt v0.3.1">
+
+<link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon">
+
+<link rel="alternate" href="/feed.xml" type="application/atom+xml">
+
+<link rel="stylesheet" href="/assets/css/screen.css" type="text/css">
+<link rel="stylesheet" href="/assets/css/pygments.css" type="text/css">
+
+
+    <script type="text/javascript">
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-41614976-1']);
+        _gaq.push(['_trackPageview']);
+
+        (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
+
+
+    <title>Дата, время и временные зоны в пайтоне &ndash; Труханов блог</title>
+</head>
+
+<body>
+    <div id="container">
+        <div id="nav">
+            <ul>
+                <li><a href="/">Blog</a></li>
+                <li><a href="/archives/">Archives</a></li>
+                <li><a href="/feed.xml">Feed</a></li>
+            </ul>
+                <ul id="social">
+            
+                    
+                    
+                    <li><a href="https://github.com/geerk"><img src="/assets/images/social/github.png" width="16" height="16" alt="GitHub"></a></li>
+                    
+                    
+                    
+                    
+                    <li><a href="https://twitter.com/#!/geerk"><img src="/assets/images/social/twitter.png" width="16" height="16" alt="Twitter"></a></li>
+            
+                    <!-- <li><a href="http://masters.donntu.edu.ua/2013/fknt/trukhanov/">ДонНТУ</a></li> -->
+                </ul>
+        </div>
+
+        <div id="header">
+            <h1><a href="/">Труханов блог</a></h1>
+            
+        </div>
+
+        <div id="content">
+            
+    <div class="item post">
+        <div class="header">
+            <h1>Дата, время и временные зоны в пайтоне</h1>
+            <h2>Wednesday, December 03, 2014 <span>&raquo;</span> <a href="/tags/datetime/">datetime</a>, <a href="/tags/django/">django</a>, <a href="/tags/python/">python</a>, <a href="/tags/timezone/">timezone</a></h2>
+        </div>
+
+        <div class="body">
+            <p>Работа с датами и временем в пайтоне устроена достаточно запутанно и неочевидно. В большей степени это обусловлено запутанностью времени в реальной жизни. В этом посте я попытаюсь объяснить неочевидные моменты в работе со временем в пайтоне (модуль <a href="https://docs.python.org/2/library/datetime.html">datetime</a>). Работа с временными метками (timestamps) описана в одном из предыдущих постов: <a href="/Python-timestamps">Таймстампы в пайтоне</a>.</p>
+<h3>&ldquo;Наивное&rdquo; и &ldquo;осведомлённое&rdquo; время</h3>
+<p>В англоязычной документации используются термины naive datetime (наивное время) и aware datetime (осведомлённое время). По сути &ldquo;наивным&rdquo; временем называют объект класса <code>datetime</code>, у которого атрибут <code>tzinfo</code> не установлен (т.е. <code>None</code>). Если же этот атрибут установлен, объект <code>datetime</code> является &ldquo;осведомлённым&rdquo;, т.е. этот объект знает в какой временной зоне он представляет время. <code>tzinfo</code> (timezone info &ndash; временная зона) &ndash; параметр, определяющий к какой временной зоне относится данное время. Важной особенностью этого различия является невозможность сравнивать осведомлённое и наивное время (возникает исключение <code>TypeError</code>).</p>
+<h3>Как получить текущее время?</h3>
+<p>Очень часто в примерах работы со временем приводят такой пример:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3</pre></div></td><td class="code"><div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+<span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2014</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">23</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">51453</span><span class="p">)</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>и как правило &ndash; это некорректно. Потому что <code>datetime.now()</code> возвращает текущее <strong>локальное</strong> время, т.е. время, которое установлено в операционной системе вашего компьютера. И все было бы ничего, если бы это время было &ldquo;осведомлённым&rdquo; (aware), но как видно из возвращенного результата, временная зона в этом случае не устанавливается.</p>
+
+<p>Более правильным было бы использовать <code>datetime.utcnow()</code>:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2</pre></div></td><td class="code"><div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+<span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2014</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">23</span><span class="p">,</span> <span class="mi">17</span><span class="p">,</span> <span class="mi">394815</span><span class="p">)</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>но и этот способ тоже не совсем корректый (хотя и лучше чем предыдщуий). Если сравнить время, то оно отличается на два часа, потому что мое локальное время отличается от UTC на два часа. Но, опять же, это время является наивным &ndash; в нем не установлена временная зона UTC. Проблема заключается в том, что в пайтоне нет встроенной поддержки временных зон. А все потому, что временные зоны меняются намного чаще чем выходит новая версия пайтона. Работа с временными зонами была вынесена в отдельный пакет &ndash; <a href="https://pypi.python.org/pypi/pytz">pytz</a>, который легко устанавливается через <code>pip</code>: <code>pip install pytz</code>. В итоге корректным способом получения текущего времени будет следующий:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3</pre></div></td><td class="code"><div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">pytz</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">pytz</span><span class="o">.</span><span class="n">utc</span><span class="o">.</span><span class="n">localize</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">())</span>
+<span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2014</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">23</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">154669</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=&lt;</span><span class="n">UTC</span><span class="o">&gt;</span><span class="p">)</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>Если вы используете Django со включенным <code>USE_TZ</code>, можно воспользоваться вспомогательным модулем <code>django.utils.timezone</code>, который значительно упрощает жизнь с временными зонами:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3</pre></div></td><td class="code"><div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">django.utils</span> <span class="kn">import</span> <span class="n">timezone</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">timezone</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+<span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2014</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">23</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">154669</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=&lt;</span><span class="n">UTC</span><span class="o">&gt;</span><span class="p">)</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>В моём случае создалось время во временной зоне UTC, потому что в настройках у меня указано <code>TIME_ZONE = &#39;UTC&#39;</code>.</p>
+
+<p>Чаще всего рекомендуют в коде работать исключительно с осведомлённым временем (например <a href="http://asvetlov.blogspot.com/2011/02/date-and-time.html">тут</a>), однако существует альтернативная точка зрения, которая заключается в том, что если повсюду в коде использовать только UTC, то можно обойтись и наивным временем. Подробнее можно почитать, например <a href="http://habrahabr.ru/company/mailru/blog/242615/">здесь</a>.</p>
+<h3>Как получить текущую дату?</h3>
+<p>Сначала может показаться, что дата не зависит от временных зон, так как не содержит часы, минуты и секунды, но это не так. Дата также зависит от временной зоны. В определённые моменты времени на Земле в разных странах может быть разная дата. Всё, конечно, зависит от того, в какой временной зоне вам нужна дата. Если в UTC, то её можно получить, например, так:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2</pre></div></td><td class="code"><div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="n">pytz</span><span class="o">.</span><span class="n">utc</span><span class="o">.</span><span class="n">localize</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">())</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+<span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2014</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</td></tr></table></div></div>
+<p><code>datetime.date.today()</code> возвращает локальную (наивную) дату, т.е. дату, которая установлена на вашем компьютере.</p>
+<h3>Конвертация осведомлённого времени между временными зонами</h3>
+<p>Библиотека <a href="http://pytz.sourceforge.net/#localized-times-and-date-arithmetic">pytz</a> предоставляет два способа локализации времени:</p>
+<h5>1. Если у вас уже есть время в определённой временной зоне, но оно наивное.</h5>
+<p>В этом случае его можно сделать осведомлённым с помощью метода <code>localize</code> у объекта <code>timezone</code>:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5
+6</pre></div></td><td class="code"><div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">dt</span>
+<span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2014</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">44</span><span class="p">,</span> <span class="mi">43</span><span class="p">,</span> <span class="mi">680037</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">kiev_tz</span> <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s">&#39;Europe/Kiev&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">kiev_tz</span><span class="o">.</span><span class="n">localize</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+<span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2014</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">44</span><span class="p">,</span> <span class="mi">43</span><span class="p">,</span> <span class="mi">680037</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=&lt;</span><span class="n">DstTzInfo</span> <span class="s">&#39;Europe/Kiev&#39;</span> <span class="n">EET</span><span class="o">+</span><span class="mi">2</span><span class="p">:</span><span class="mo">00</span><span class="p">:</span><span class="mo">00</span> <span class="n">STD</span><span class="o">&gt;</span><span class="p">)</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>Следует заметить, что этот метод не просто заменяет временную зону:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2</pre></div></td><td class="code"><div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="n">dt</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tzinfo</span><span class="o">=</span><span class="n">kiev_tz</span><span class="p">)</span>
+<span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2014</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">44</span><span class="p">,</span> <span class="mi">43</span><span class="p">,</span> <span class="mi">680037</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=&lt;</span><span class="n">DstTzInfo</span> <span class="s">&#39;Europe/Kiev&#39;</span> <span class="n">KMT</span><span class="o">+</span><span class="mi">2</span><span class="p">:</span><span class="mo">02</span><span class="p">:</span><span class="mo">00</span> <span class="n">STD</span><span class="o">&gt;</span><span class="p">)</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>В документации чётко сказано, что не следует использовать <code>tzinfo</code> параметр явно, потому что это <strong>не работает</strong> так как ожидается для большинства временных зон.</p>
+<h5>2. Если у вас есть осведомлённое время в некоторой временной зоне.</h5>
+<p>Для того чтобы сконвертировать его в другую временную зону существует метод <code>astimezone</code> у объекта <code>datetime</code>:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4</pre></div></td><td class="code"><div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="n">utc_dt</span> <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">utc</span><span class="o">.</span><span class="n">localize</span><span class="p">(</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2014</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">44</span><span class="p">,</span> <span class="mi">43</span><span class="p">))</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">kiev_tz</span> <span class="o">=</span> <span class="n">pytz</span><span class="o">.</span><span class="n">timezone</span><span class="p">(</span><span class="s">&#39;Europe/Kiev&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">utc_dt</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">kiev_tz</span><span class="p">)</span>
+<span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2014</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">44</span><span class="p">,</span> <span class="mi">43</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=&lt;</span><span class="n">DstTzInfo</span> <span class="s">&#39;Europe/Kiev&#39;</span> <span class="n">EET</span><span class="o">+</span><span class="mi">2</span><span class="p">:</span><span class="mo">00</span><span class="p">:</span><span class="mo">00</span> <span class="n">STD</span><span class="o">&gt;</span><span class="p">)</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>В результате вы получаете осведомлённое время в необходимой временной зоне.</p>
+<h3>Как избежать ошибок при работе с временными зонами?</h3>
+<p>Чтобы уменьшить вероятность ошибки при работе с временными зонами в пайтоне достаточно следовать нескольким основным принципам:</p>
+
+<ul>
+<li>в базе данных хранить время в UTC;</li>
+<li>везде в коде работать только с UTC, все вычисления проводить только в UTC;</li>
+<li>UTC переводить в неоходимую временную зону только непосредственно перед тем как показать время конечному пользователю;</li>
+<li>при вводе времени от пользователя явно сообщать ему в какой временной зоне ожидается от него время и переводить его в UTC для дальнейшей работы.</li>
+</ul>
+
+<p>Но, это будет правильным только в том случае, если временные зоны не будут менять свое смещение относительно UTC и не будут менять правила перехода на летнее/зимнее время (DST &ndash; Daylight Saving Time), а это уже никто не гарантирует. Эту проблему можно решить только если хранить данные о временной зоне вместе со временем в базе данных. Но даже это не спасёт, если место (город), к которому привязано время перейдёт в другую временную зону (а это тоже случается). В таком случае поможет только хранение времени и временной зоны с привязкой к конкретному месту (городу). Подробнее эта тема раскрыта <a href="http://habrahabr.ru/company/mailru/blog/242645/">здесь</a>.</p>
+
+        </div>
+    </div>
+
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'trukhanovblog'; // required: replace example with your forum shortname
+        var disqus_identifier = '/Data-i-vremya-i-vremennye-zony-v-paitone/';
+        var disqus_title = 'Дата, время и временные зоны в пайтоне';
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+        </div>
+
+        <div id="footer">
+        <p style="float: right; margin-top: 0px;"><a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.ru"><img alt="Лицензия Creative Commons" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/80x15.png" /></a></p><p>Copyright &copy; 2013-2014 Timofey Trukhanov &ndash; powered by <a href="http://mynt.mirroredwhite.com/">mynt</a></p>
+        </div>
+    </div>
+</body>
+</html>

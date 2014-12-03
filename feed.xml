@@ -6,7 +6,7 @@
         <link rel="alternate" href="http://blog.trukhanov.net/" />
         <link rel="self" href="http://blog.trukhanov.net/feed.xml" type="application/atom+xml" />
         <id>http://blog.trukhanov.net/</id>
-        <updated>2014-09-27T10:37:55Z</updated>
+        <updated>2014-12-03T19:12:30Z</updated>
         
         <author>
             <name>Timofey Trukhanov</name>
@@ -16,10 +16,89 @@
         
         
             <entry>
+                <title>Дата, время и временные зоны в пайтоне</title>
+                <link rel="alternate" href="http://blog.trukhanov.net/Data-i-vremya-i-vremennye-zony-v-paitone/" type="text/html" />
+                <id>http://blog.trukhanov.net/Data-i-vremya-i-vremennye-zony-v-paitone/</id>
+                <updated>2014-12-03T19:04:00Z</updated>
+                
+                <summary type="html">Работа с датами и временем в пайтоне устроена достаточно запутанно и неочевидно. В большей степени это обусловлено запутанностью времени в реальной жизни. В этом посте я попытаюсь объяснить неочевидные моменты в работе со временем в пайтоне (модуль &lt;a href=&#34;https://docs.python.org/2/library/datetime.html&#34;&gt;datetime&lt;/a&gt;). Работа с временными метками (timestamps) описана в одном из предыдущих постов: &lt;a href=&#34;http://blog.trukhanov.net/Python-timestamps&#34;&gt;Таймстампы в пайтоне&lt;/a&gt;.</summary>
+                <content type="html">&lt;p&gt;Работа с датами и временем в пайтоне устроена достаточно запутанно и неочевидно. В большей степени это обусловлено запутанностью времени в реальной жизни. В этом посте я попытаюсь объяснить неочевидные моменты в работе со временем в пайтоне (модуль &lt;a href=&#34;https://docs.python.org/2/library/datetime.html&#34;&gt;datetime&lt;/a&gt;). Работа с временными метками (timestamps) описана в одном из предыдущих постов: &lt;a href=&#34;http://blog.trukhanov.net/Python-timestamps&#34;&gt;Таймстампы в пайтоне&lt;/a&gt;.&lt;/p&gt;
+&lt;h3&gt;&amp;ldquo;Наивное&amp;rdquo; и &amp;ldquo;осведомлённое&amp;rdquo; время&lt;/h3&gt;
+&lt;p&gt;В англоязычной документации используются термины naive datetime (наивное время) и aware datetime (осведомлённое время). По сути &amp;ldquo;наивным&amp;rdquo; временем называют объект класса &lt;code&gt;datetime&lt;/code&gt;, у которого атрибут &lt;code&gt;tzinfo&lt;/code&gt; не установлен (т.е. &lt;code&gt;None&lt;/code&gt;). Если же этот атрибут установлен, объект &lt;code&gt;datetime&lt;/code&gt; является &amp;ldquo;осведомлённым&amp;rdquo;, т.е. этот объект знает в какой временной зоне он представляет время. &lt;code&gt;tzinfo&lt;/code&gt; (timezone info &amp;ndash; временная зона) &amp;ndash; параметр, определяющий к какой временной зоне относится данное время. Важной особенностью этого различия является невозможность сравнивать осведомлённое и наивное время (возникает исключение &lt;code&gt;TypeError&lt;/code&gt;).&lt;/p&gt;
+&lt;h3&gt;Как получить текущее время?&lt;/h3&gt;
+&lt;p&gt;Очень часто в примерах работы со временем приводят такой пример:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;&amp;gt;&amp;gt;&amp;gt; from datetime import datetime
+&amp;gt;&amp;gt;&amp;gt; datetime.now()
+datetime.datetime(2014, 11, 2, 12, 23, 16, 51453)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;и как правило &amp;ndash; это некорректно. Потому что &lt;code&gt;datetime.now()&lt;/code&gt; возвращает текущее &lt;strong&gt;локальное&lt;/strong&gt; время, т.е. время, которое установлено в операционной системе вашего компьютера. И все было бы ничего, если бы это время было &amp;ldquo;осведомлённым&amp;rdquo; (aware), но как видно из возвращенного результата, временная зона в этом случае не устанавливается.&lt;/p&gt;
+
+&lt;p&gt;Более правильным было бы использовать &lt;code&gt;datetime.utcnow()&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;&amp;gt;&amp;gt;&amp;gt; datetime.now()
+datetime.datetime(2014, 11, 2, 10, 23, 17, 394815)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;но и этот способ тоже не совсем корректый (хотя и лучше чем предыдщуий). Если сравнить время, то оно отличается на два часа, потому что мое локальное время отличается от UTC на два часа. Но, опять же, это время является наивным &amp;ndash; в нем не установлена временная зона UTC. Проблема заключается в том, что в пайтоне нет встроенной поддержки временных зон. А все потому, что временные зоны меняются намного чаще чем выходит новая версия пайтона. Работа с временными зонами была вынесена в отдельный пакет &amp;ndash; &lt;a href=&#34;https://pypi.python.org/pypi/pytz&#34;&gt;pytz&lt;/a&gt;, который легко устанавливается через &lt;code&gt;pip&lt;/code&gt;: &lt;code&gt;pip install pytz&lt;/code&gt;. В итоге корректным способом получения текущего времени будет следующий:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;&amp;gt;&amp;gt;&amp;gt; import pytz
+&amp;gt;&amp;gt;&amp;gt; pytz.utc.localize(datetime.utcnow())
+datetime.datetime(2014, 11, 2, 10, 23, 28, 154669, tzinfo=&amp;lt;UTC&amp;gt;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Если вы используете Django со включенным &lt;code&gt;USE_TZ&lt;/code&gt;, можно воспользоваться вспомогательным модулем &lt;code&gt;django.utils.timezone&lt;/code&gt;, который значительно упрощает жизнь с временными зонами:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;&amp;gt;&amp;gt;&amp;gt; from django.utils import timezone
+&amp;gt;&amp;gt;&amp;gt; timezone.now()
+datetime.datetime(2014, 11, 2, 10, 23, 28, 154669, tzinfo=&amp;lt;UTC&amp;gt;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;В моём случае создалось время во временной зоне UTC, потому что в настройках у меня указано &lt;code&gt;TIME_ZONE = &amp;#39;UTC&amp;#39;&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Чаще всего рекомендуют в коде работать исключительно с осведомлённым временем (например &lt;a href=&#34;http://asvetlov.blogspot.com/2011/02/date-and-time.html&#34;&gt;тут&lt;/a&gt;), однако существует альтернативная точка зрения, которая заключается в том, что если повсюду в коде использовать только UTC, то можно обойтись и наивным временем. Подробнее можно почитать, например &lt;a href=&#34;http://habrahabr.ru/company/mailru/blog/242615/&#34;&gt;здесь&lt;/a&gt;.&lt;/p&gt;
+&lt;h3&gt;Как получить текущую дату?&lt;/h3&gt;
+&lt;p&gt;Сначала может показаться, что дата не зависит от временных зон, так как не содержит часы, минуты и секунды, но это не так. Дата также зависит от временной зоны. В определённые моменты времени на Земле в разных странах может быть разная дата. Всё, конечно, зависит от того, в какой временной зоне вам нужна дата. Если в UTC, то её можно получить, например, так:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;&amp;gt;&amp;gt;&amp;gt; pytz.utc.localize(datetime.utcnow()).date()
+datetime.datetime(2014, 11, 2)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;datetime.date.today()&lt;/code&gt; возвращает локальную (наивную) дату, т.е. дату, которая установлена на вашем компьютере.&lt;/p&gt;
+&lt;h3&gt;Конвертация осведомлённого времени между временными зонами&lt;/h3&gt;
+&lt;p&gt;Библиотека &lt;a href=&#34;http://pytz.sourceforge.net/#localized-times-and-date-arithmetic&#34;&gt;pytz&lt;/a&gt; предоставляет два способа локализации времени:&lt;/p&gt;
+&lt;h5&gt;1. Если у вас уже есть время в определённой временной зоне, но оно наивное.&lt;/h5&gt;
+&lt;p&gt;В этом случае его можно сделать осведомлённым с помощью метода &lt;code&gt;localize&lt;/code&gt; у объекта &lt;code&gt;timezone&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;&amp;gt;&amp;gt;&amp;gt; dt = datetime.now()
+&amp;gt;&amp;gt;&amp;gt; dt
+datetime.datetime(2014, 11, 13, 7, 44, 43, 680037)
+&amp;gt;&amp;gt;&amp;gt; kiev_tz = pytz.timezone(&amp;#x27;Europe&amp;#x2F;Kiev&amp;#x27;)
+&amp;gt;&amp;gt;&amp;gt; kiev_tz.localize(dt)
+datetime.datetime(2014, 11, 13, 7, 44, 43, 680037, tzinfo=&amp;lt;DstTzInfo &amp;#x27;Europe&amp;#x2F;Kiev&amp;#x27; EET+2:00:00 STD&amp;gt;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Следует заметить, что этот метод не просто заменяет временную зону:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;&amp;gt;&amp;gt;&amp;gt; dt.replace(tzinfo=kiev_tz)
+datetime.datetime(2014, 11, 13, 7, 44, 43, 680037, tzinfo=&amp;lt;DstTzInfo &amp;#x27;Europe&amp;#x2F;Kiev&amp;#x27; KMT+2:02:00 STD&amp;gt;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;В документации чётко сказано, что не следует использовать &lt;code&gt;tzinfo&lt;/code&gt; параметр явно, потому что это &lt;strong&gt;не работает&lt;/strong&gt; так как ожидается для большинства временных зон.&lt;/p&gt;
+&lt;h5&gt;2. Если у вас есть осведомлённое время в некоторой временной зоне.&lt;/h5&gt;
+&lt;p&gt;Для того чтобы сконвертировать его в другую временную зону существует метод &lt;code&gt;astimezone&lt;/code&gt; у объекта &lt;code&gt;datetime&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;&amp;gt;&amp;gt;&amp;gt; utc_dt = pytz.utc.localize(datetime(2014, 11, 13, 7, 44, 43))
+&amp;gt;&amp;gt;&amp;gt; kiev_tz = pytz.timezone(&amp;#x27;Europe&amp;#x2F;Kiev&amp;#x27;)
+&amp;gt;&amp;gt;&amp;gt; utc_dt.astimezone(kiev_tz)
+datetime.datetime(2014, 11, 13, 9, 44, 43, tzinfo=&amp;lt;DstTzInfo &amp;#x27;Europe&amp;#x2F;Kiev&amp;#x27; EET+2:00:00 STD&amp;gt;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;В результате вы получаете осведомлённое время в необходимой временной зоне.&lt;/p&gt;
+&lt;h3&gt;Как избежать ошибок при работе с временными зонами?&lt;/h3&gt;
+&lt;p&gt;Чтобы уменьшить вероятность ошибки при работе с временными зонами в пайтоне достаточно следовать нескольким основным принципам:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;в базе данных хранить время в UTC;&lt;/li&gt;
+&lt;li&gt;везде в коде работать только с UTC, все вычисления проводить только в UTC;&lt;/li&gt;
+&lt;li&gt;UTC переводить в неоходимую временную зону только непосредственно перед тем как показать время конечному пользователю;&lt;/li&gt;
+&lt;li&gt;при вводе времени от пользователя явно сообщать ему в какой временной зоне ожидается от него время и переводить его в UTC для дальнейшей работы.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Но, это будет правильным только в том случае, если временные зоны не будут менять свое смещение относительно UTC и не будут менять правила перехода на летнее/зимнее время (DST &amp;ndash; Daylight Saving Time), а это уже никто не гарантирует. Эту проблему можно решить только если хранить данные о временной зоне вместе со временем в базе данных. Но даже это не спасёт, если место (город), к которому привязано время перейдёт в другую временную зону (а это тоже случается). В таком случае поможет только хранение времени и временной зоны с привязкой к конкретному месту (городу). Подробнее эта тема раскрыта &lt;a href=&#34;http://habrahabr.ru/company/mailru/blog/242645/&#34;&gt;здесь&lt;/a&gt;.&lt;/p&gt;
+</content>
+            </entry>
+        
+            <entry>
                 <title>Running synchronous code on tornado asynchronously</title>
                 <link rel="alternate" href="http://blog.trukhanov.net/Running-synchronous-code-on-tornado-asynchronously/" type="text/html" />
                 <id>http://blog.trukhanov.net/Running-synchronous-code-on-tornado-asynchronously/</id>
-                <updated>2014-09-26T10:28:00Z</updated>
+                <updated>2014-09-26T05:35:00Z</updated>
                 
                 <summary type="html">Have you ever needed to run synchronous code in asynchronous way on tornado? I had such a need.</summary>
                 <content type="html">&lt;p&gt;Have you ever needed to run synchronous code in asynchronous way on tornado? I had such a need.&lt;/p&gt;
