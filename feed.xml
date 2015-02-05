@@ -6,7 +6,7 @@
         <link rel="alternate" href="http://blog.trukhanov.net/" />
         <link rel="self" href="http://blog.trukhanov.net/feed.xml" type="application/atom+xml" />
         <id>http://blog.trukhanov.net/</id>
-        <updated>2014-12-03T19:12:30Z</updated>
+        <updated>2015-02-05T18:18:00Z</updated>
         
         <author>
             <name>Timofey Trukhanov</name>
@@ -19,7 +19,7 @@
                 <title>Дата, время и временные зоны в пайтоне</title>
                 <link rel="alternate" href="http://blog.trukhanov.net/Data-i-vremya-i-vremennye-zony-v-paitone/" type="text/html" />
                 <id>http://blog.trukhanov.net/Data-i-vremya-i-vremennye-zony-v-paitone/</id>
-                <updated>2014-12-03T19:04:00Z</updated>
+                <updated>2014-12-03T18:17:00Z</updated>
                 
                 <summary type="html">Работа с датами и временем в пайтоне устроена достаточно запутанно и неочевидно. В большей степени это обусловлено запутанностью времени в реальной жизни. В этом посте я попытаюсь объяснить неочевидные моменты в работе со временем в пайтоне (модуль &lt;a href=&#34;https://docs.python.org/2/library/datetime.html&#34;&gt;datetime&lt;/a&gt;). Работа с временными метками (timestamps) описана в одном из предыдущих постов: &lt;a href=&#34;http://blog.trukhanov.net/Python-timestamps&#34;&gt;Таймстампы в пайтоне&lt;/a&gt;.</summary>
                 <content type="html">&lt;p&gt;Работа с датами и временем в пайтоне устроена достаточно запутанно и неочевидно. В большей степени это обусловлено запутанностью времени в реальной жизни. В этом посте я попытаюсь объяснить неочевидные моменты в работе со временем в пайтоне (модуль &lt;a href=&#34;https://docs.python.org/2/library/datetime.html&#34;&gt;datetime&lt;/a&gt;). Работа с временными метками (timestamps) описана в одном из предыдущих постов: &lt;a href=&#34;http://blog.trukhanov.net/Python-timestamps&#34;&gt;Таймстампы в пайтоне&lt;/a&gt;.&lt;/p&gt;
@@ -34,7 +34,7 @@ datetime.datetime(2014, 11, 2, 12, 23, 16, 51453)
 &lt;p&gt;и как правило &amp;ndash; это некорректно. Потому что &lt;code&gt;datetime.now()&lt;/code&gt; возвращает текущее &lt;strong&gt;локальное&lt;/strong&gt; время, т.е. время, которое установлено в операционной системе вашего компьютера. И все было бы ничего, если бы это время было &amp;ldquo;осведомлённым&amp;rdquo; (aware), но как видно из возвращенного результата, временная зона в этом случае не устанавливается.&lt;/p&gt;
 
 &lt;p&gt;Более правильным было бы использовать &lt;code&gt;datetime.utcnow()&lt;/code&gt;:&lt;/p&gt;
-&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;&amp;gt;&amp;gt;&amp;gt; datetime.now()
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;&amp;gt;&amp;gt;&amp;gt; datetime.utcnow()
 datetime.datetime(2014, 11, 2, 10, 23, 17, 394815)
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;но и этот способ тоже не совсем корректый (хотя и лучше чем предыдщуий). Если сравнить время, то оно отличается на два часа, потому что мое локальное время отличается от UTC на два часа. Но, опять же, это время является наивным &amp;ndash; в нем не установлена временная зона UTC. Проблема заключается в том, что в пайтоне нет встроенной поддержки временных зон. А все потому, что временные зоны меняются намного чаще чем выходит новая версия пайтона. Работа с временными зонами была вынесена в отдельный пакет &amp;ndash; &lt;a href=&#34;https://pypi.python.org/pypi/pytz&#34;&gt;pytz&lt;/a&gt;, который легко устанавливается через &lt;code&gt;pip&lt;/code&gt;: &lt;code&gt;pip install pytz&lt;/code&gt;. В итоге корректным способом получения текущего времени будет следующий:&lt;/p&gt;
