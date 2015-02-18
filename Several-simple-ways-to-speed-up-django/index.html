@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="author" content="Timofey Trukhanov">
+<meta name="description" content="Персональный блог Тимофея Труханова">
+<meta name="generator" content="mynt v0.3.1">
+
+<link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon">
+
+<link rel="alternate" href="/feed.xml" type="application/atom+xml">
+
+<link rel="stylesheet" href="/assets/css/screen.css" type="text/css">
+<link rel="stylesheet" href="/assets/css/pygments.css" type="text/css">
+
+
+    <script type="text/javascript">
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-41614976-1']);
+        _gaq.push(['_trackPageview']);
+
+        (function() {
+            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
+
+
+    <title>Several simple ways to speed up django &ndash; Труханов блог</title>
+</head>
+
+<body>
+    <div id="container">
+        <div id="nav">
+            <ul>
+                <li><a href="/">Blog</a></li>
+                <li><a href="/archives/">Archives</a></li>
+                <li><a href="/feed.xml">Feed</a></li>
+            </ul>
+                <ul id="social">
+            
+                    
+                    
+                    <li><a href="https://github.com/geerk"><img src="/assets/images/social/github.png" width="16" height="16" alt="GitHub"></a></li>
+                    
+                    
+                    
+                    
+                    <li><a href="https://twitter.com/#!/geerk"><img src="/assets/images/social/twitter.png" width="16" height="16" alt="Twitter"></a></li>
+            
+                    <!-- <li><a href="http://masters.donntu.edu.ua/2013/fknt/trukhanov/">ДонНТУ</a></li> -->
+                </ul>
+        </div>
+
+        <div id="header">
+            <h1><a href="/">Труханов блог</a></h1>
+            
+        </div>
+
+        <div id="content">
+            
+    <div class="item post">
+        <div class="header">
+            <h1>Several simple ways to speed up django</h1>
+            <h2>Thursday, February 05, 2015 <span>&raquo;</span> <a href="/tags/caching/">caching</a>, <a href="/tags/django/">django</a>, <a href="/tags/optimization/">optimization</a>, <a href="/tags/python/">python</a></h2>
+        </div>
+
+        <div class="body">
+            <p>There are lots of ways to accelerate your django project, but most of them require significant changes to code. In this post I collected few approaches to improve django performance with little effort.</p>
+<h3>Enable cached template loader</h3>
+<p>From <a href="https://docs.djangoproject.com/en/1.7/ref/templates/api/#django.template.loaders.cached.Loader">django docs</a>:</p>
+
+<blockquote>
+<p>By default, the templating system will read and compile your templates every time they need to be rendered. While the Django templating system is quite fast, the overhead from reading and compiling templates can add up.</p>
+</blockquote>
+
+<p>To store compiled templates in memory and to not load them every time when django needs them, there is <code>django.template.loaders.cached.Loader</code> which wraps any regular loaders. It saves in memory compiled templates first time when they requested.</p>
+
+<p>To turn it on in django prior 1.8:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5
+6</pre></div></td><td class="code"><div class="highlight"><pre><span class="n">TEMPLATE_LOADERS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="p">(</span><span class="s">&#39;django.template.loaders.cached.Loader&#39;</span><span class="p">,</span> <span class="p">(</span>
+        <span class="s">&#39;django.template.loaders.filesystem.Loader&#39;</span><span class="p">,</span>
+        <span class="s">&#39;django.template.loaders.app_directories.Loader&#39;</span><span class="p">,</span>
+    <span class="p">)),</span>
+<span class="p">)</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>For 1.8 and greater:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12</pre></div></td><td class="code"><div class="highlight"><pre><span class="n">TEMPLATES</span> <span class="o">=</span> <span class="p">[{</span>
+    <span class="s">&#39;BACKEND&#39;</span><span class="p">:</span> <span class="s">&#39;django.template.backends.django.DjangoTemplates&#39;</span><span class="p">,</span>
+    <span class="s">&#39;DIRS&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">BASE_DIR</span><span class="p">,</span> <span class="s">&#39;templates&#39;</span><span class="p">)],</span>
+    <span class="s">&#39;OPTIONS&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">&#39;loaders&#39;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s">&#39;django.template.loaders.cached.Loader&#39;</span><span class="p">,</span> <span class="p">[</span>
+                <span class="s">&#39;django.template.loaders.filesystem.Loader&#39;</span><span class="p">,</span>
+                <span class="s">&#39;django.template.loaders.app_directories.Loader&#39;</span><span class="p">,</span>
+            <span class="p">]),</span>
+        <span class="p">],</span>
+    <span class="p">},</span>
+<span class="p">}]</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>This approach only useful in production, where you do not change templates often. I suggest overwrite this setting for development environment, beacuse otherwise autoreload won&rsquo;t work for <code>runserver</code> - you will need to restart <code>runserver</code> manually in order to apply changes in templates.</p>
+<h3>Enable cache for sessions</h3>
+<p>As you may know by default django goes to database for session on every request. Querying database usually expensive operation, so it makes sense to eliminate querying where it is possible. Django provides this possibility by introducing <a href="https://docs.djangoproject.com/en/1.7/topics/http/sessions/#using-cached-sessions">cached session backends</a>:</p>
+
+<ol>
+<li><code>django.contrib.sessions.backends.cache</code>;</li>
+<li><code>django.contrib.sessions.backends.cached_db</code>.</li>
+</ol>
+
+<p>Before using cached session backends you should configure your <a href="https://docs.djangoproject.com/en/1.7/topics/cache/">cache</a>. First backend uses exlusively cache for storing session, but it may be not what you need, because in this case sessions may not be persistent. I suggest to use <code>cached_db</code> backend - it stores session data in database and caches it. Also, you should only use cache-based sessions if you&rsquo;re using the Memcached (or Redis) cache backend (see <a href="https://docs.djangoproject.com/en/1.7/topics/http/sessions/#using-cached-sessions">docs</a>).</p>
+
+<p>To enable <code>cached_db</code> session db, set <code>SESSION_ENGINE</code> to following in your <code>settings.py</code> file:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1</pre></div></td><td class="code"><div class="highlight"><pre><span class="n">SESSION_ENGINE</span> <span class="o">=</span> <span class="s">&#39;django.contrib.sessions.backends.cached_db&#39;</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>With this aproach you will save one database query on every request to your server if you use sessions.</p>
+<h3>Use simplier password hasher in tests</h3>
+<p>By default Django uses slow and more secure password hasher. However, usually you do not need such level of security during tests. Thus, if you make a lot of signins in tests, you can speed them up by installing fast password hasher. For example, <code>django.contrib.auth.hashers.MD5PasswordHasher</code>:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3</pre></div></td><td class="code"><div class="highlight"><pre><span class="n">PASSWORD_HASHERS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s">&#39;django.contrib.auth.hashers.MD5PasswordHasher&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>See <a href="https://docs.djangoproject.com/en/1.4/topics/testing/#speeding-up-the-tests">docs</a> for details. And do not forget that it is suitable only for testing. Don&rsquo;t use it in production.</p>
+<h3>Use get_current_site</h3>
+<p>If you want to use Django sites framework, I recommend to not use <code>Site</code> model directly, but rather use helpers, such as <a href="https://docs.djangoproject.com/en/1.7/ref/contrib/sites/#get-current-site-shortcut">get_current_site</a>, <a href="https://docs.djangoproject.com/en/1.7/ref/contrib/sites/#site-middleware">site middleware</a>, <code>Site.objects.get_current()</code>. All of these helpers use caching, therefore it will save you some db queries.</p>
+<h3>Remove unused contrib apps</h3>
+<p>When django generates settings file it adds some default contrib apps, that you might not need. Django 1.7 creates following <code>INSTALLED_APPS</code>:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5
+6
+7
+8</pre></div></td><td class="code"><div class="highlight"><pre><span class="n">INSTALLED_APPS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s">&#39;django.contrib.admin&#39;</span><span class="p">,</span>
+    <span class="s">&#39;django.contrib.auth&#39;</span><span class="p">,</span>
+    <span class="s">&#39;django.contrib.contenttypes&#39;</span><span class="p">,</span>
+    <span class="s">&#39;django.contrib.sessions&#39;</span><span class="p">,</span>
+    <span class="s">&#39;django.contrib.messages&#39;</span><span class="p">,</span>
+    <span class="s">&#39;django.contrib.staticfiles&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</td></tr></table></div></div>
+<p>If you sure that you don&rsquo;t need some of them, you can safely remove them from the list. It will save some CPU cycles. Of course you will be able to turn them on whenever you want.</p>
+<h3>Other</h3>
+<p>Moreover, do not forget about <a href="https://docs.djangoproject.com/en/1.7/topics/performance/">Django performance documentation</a>!</p>
+
+<p>To be added.</p>
+
+        </div>
+    </div>
+
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'trukhanovblog'; // required: replace example with your forum shortname
+        var disqus_identifier = '/Several-simple-ways-to-speed-up-django/';
+        var disqus_title = 'Several simple ways to speed up django';
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+        </div>
+
+        <div id="footer">
+        <p style="float: right; margin-top: 0px;"><a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.ru"><img alt="Лицензия Creative Commons" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/80x15.png" /></a></p><p>Copyright &copy; 2013-2015 Timofey Trukhanov &ndash; powered by <a href="http://mynt.mirroredwhite.com/">mynt</a></p>
+        </div>
+    </div>
+</body>
+</html>

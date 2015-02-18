@@ -6,7 +6,7 @@
         <link rel="alternate" href="http://blog.trukhanov.net/" />
         <link rel="self" href="http://blog.trukhanov.net/feed.xml" type="application/atom+xml" />
         <id>http://blog.trukhanov.net/</id>
-        <updated>2015-02-05T18:18:00Z</updated>
+        <updated>2015-02-18T05:46:27Z</updated>
         
         <author>
             <name>Timofey Trukhanov</name>
@@ -14,6 +14,88 @@
             <uri>http://blog.trukhanov.net/</uri>
         </author>
         
+        
+            <entry>
+                <title>Several simple ways to speed up django</title>
+                <link rel="alternate" href="http://blog.trukhanov.net/Several-simple-ways-to-speed-up-django/" type="text/html" />
+                <id>http://blog.trukhanov.net/Several-simple-ways-to-speed-up-django/</id>
+                <updated>2015-02-05T05:41:00Z</updated>
+                
+                <summary type="html">There are lots of ways to accelerate your django project, but most of them require significant changes to code. In this post I collected few approaches to improve django performance with little effort.</summary>
+                <content type="html">&lt;p&gt;There are lots of ways to accelerate your django project, but most of them require significant changes to code. In this post I collected few approaches to improve django performance with little effort.&lt;/p&gt;
+&lt;h3&gt;Enable cached template loader&lt;/h3&gt;
+&lt;p&gt;From &lt;a href=&#34;https://docs.djangoproject.com/en/1.7/ref/templates/api/#django.template.loaders.cached.Loader&#34;&gt;django docs&lt;/a&gt;:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;By default, the templating system will read and compile your templates every time they need to be rendered. While the Django templating system is quite fast, the overhead from reading and compiling templates can add up.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;To store compiled templates in memory and to not load them every time when django needs them, there is &lt;code&gt;django.template.loaders.cached.Loader&lt;/code&gt; which wraps any regular loaders. It saves in memory compiled templates first time when they requested.&lt;/p&gt;
+
+&lt;p&gt;To turn it on in django prior 1.8:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;TEMPLATE_LOADERS = (
+    (&amp;#x27;django.template.loaders.cached.Loader&amp;#x27;, (
+        &amp;#x27;django.template.loaders.filesystem.Loader&amp;#x27;,
+        &amp;#x27;django.template.loaders.app_directories.Loader&amp;#x27;,
+    )),
+)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;For 1.8 and greater:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;TEMPLATES = [{
+    &amp;#x27;BACKEND&amp;#x27;: &amp;#x27;django.template.backends.django.DjangoTemplates&amp;#x27;,
+    &amp;#x27;DIRS&amp;#x27;: [os.path.join(BASE_DIR, &amp;#x27;templates&amp;#x27;)],
+    &amp;#x27;OPTIONS&amp;#x27;: {
+        &amp;#x27;loaders&amp;#x27;: [
+            (&amp;#x27;django.template.loaders.cached.Loader&amp;#x27;, [
+                &amp;#x27;django.template.loaders.filesystem.Loader&amp;#x27;,
+                &amp;#x27;django.template.loaders.app_directories.Loader&amp;#x27;,
+            ]),
+        ],
+    },
+}]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;This approach only useful in production, where you do not change templates often. I suggest overwrite this setting for development environment, beacuse otherwise autoreload won&amp;rsquo;t work for &lt;code&gt;runserver&lt;/code&gt; - you will need to restart &lt;code&gt;runserver&lt;/code&gt; manually in order to apply changes in templates.&lt;/p&gt;
+&lt;h3&gt;Enable cache for sessions&lt;/h3&gt;
+&lt;p&gt;As you may know by default django goes to database for session on every request. Querying database usually expensive operation, so it makes sense to eliminate querying where it is possible. Django provides this possibility by introducing &lt;a href=&#34;https://docs.djangoproject.com/en/1.7/topics/http/sessions/#using-cached-sessions&#34;&gt;cached session backends&lt;/a&gt;:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;code&gt;django.contrib.sessions.backends.cache&lt;/code&gt;;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;django.contrib.sessions.backends.cached_db&lt;/code&gt;.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Before using cached session backends you should configure your &lt;a href=&#34;https://docs.djangoproject.com/en/1.7/topics/cache/&#34;&gt;cache&lt;/a&gt;. First backend uses exlusively cache for storing session, but it may be not what you need, because in this case sessions may not be persistent. I suggest to use &lt;code&gt;cached_db&lt;/code&gt; backend - it stores session data in database and caches it. Also, you should only use cache-based sessions if you&amp;rsquo;re using the Memcached (or Redis) cache backend (see &lt;a href=&#34;https://docs.djangoproject.com/en/1.7/topics/http/sessions/#using-cached-sessions&#34;&gt;docs&lt;/a&gt;).&lt;/p&gt;
+
+&lt;p&gt;To enable &lt;code&gt;cached_db&lt;/code&gt; session db, set &lt;code&gt;SESSION_ENGINE&lt;/code&gt; to following in your &lt;code&gt;settings.py&lt;/code&gt; file:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;SESSION_ENGINE = &amp;#x27;django.contrib.sessions.backends.cached_db&amp;#x27;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;With this aproach you will save one database query on every request to your server if you use sessions.&lt;/p&gt;
+&lt;h3&gt;Use simplier password hasher in tests&lt;/h3&gt;
+&lt;p&gt;By default Django uses slow and more secure password hasher. However, usually you do not need such level of security during tests. Thus, if you make a lot of signins in tests, you can speed them up by installing fast password hasher. For example, &lt;code&gt;django.contrib.auth.hashers.MD5PasswordHasher&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;PASSWORD_HASHERS = (
+    &amp;#x27;django.contrib.auth.hashers.MD5PasswordHasher&amp;#x27;,
+)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;See &lt;a href=&#34;https://docs.djangoproject.com/en/1.4/topics/testing/#speeding-up-the-tests&#34;&gt;docs&lt;/a&gt; for details. And do not forget that it is suitable only for testing. Don&amp;rsquo;t use it in production.&lt;/p&gt;
+&lt;h3&gt;Use get_current_site&lt;/h3&gt;
+&lt;p&gt;If you want to use Django sites framework, I recommend to not use &lt;code&gt;Site&lt;/code&gt; model directly, but rather use helpers, such as &lt;a href=&#34;https://docs.djangoproject.com/en/1.7/ref/contrib/sites/#get-current-site-shortcut&#34;&gt;get_current_site&lt;/a&gt;, &lt;a href=&#34;https://docs.djangoproject.com/en/1.7/ref/contrib/sites/#site-middleware&#34;&gt;site middleware&lt;/a&gt;, &lt;code&gt;Site.objects.get_current()&lt;/code&gt;. All of these helpers use caching, therefore it will save you some db queries.&lt;/p&gt;
+&lt;h3&gt;Remove unused contrib apps&lt;/h3&gt;
+&lt;p&gt;When django generates settings file it adds some default contrib apps, that you might not need. Django 1.7 creates following &lt;code&gt;INSTALLED_APPS&lt;/code&gt;:&lt;/p&gt;
+&lt;pre&gt;&lt;code data-lang=&#34;python&#34;&gt;INSTALLED_APPS = (
+    &amp;#x27;django.contrib.admin&amp;#x27;,
+    &amp;#x27;django.contrib.auth&amp;#x27;,
+    &amp;#x27;django.contrib.contenttypes&amp;#x27;,
+    &amp;#x27;django.contrib.sessions&amp;#x27;,
+    &amp;#x27;django.contrib.messages&amp;#x27;,
+    &amp;#x27;django.contrib.staticfiles&amp;#x27;,
+)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;If you sure that you don&amp;rsquo;t need some of them, you can safely remove them from the list. It will save some CPU cycles. Of course you will be able to turn them on whenever you want.&lt;/p&gt;
+&lt;h3&gt;Other&lt;/h3&gt;
+&lt;p&gt;Moreover, do not forget about &lt;a href=&#34;https://docs.djangoproject.com/en/1.7/topics/performance/&#34;&gt;Django performance documentation&lt;/a&gt;!&lt;/p&gt;
+
+&lt;p&gt;To be added.&lt;/p&gt;
+</content>
+            </entry>
         
             <entry>
                 <title>Дата, время и временные зоны в пайтоне</title>
