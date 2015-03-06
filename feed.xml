@@ -6,7 +6,7 @@
         <link rel="alternate" href="http://blog.trukhanov.net/" />
         <link rel="self" href="http://blog.trukhanov.net/feed.xml" type="application/atom+xml" />
         <id>http://blog.trukhanov.net/</id>
-        <updated>2015-02-18T05:46:27Z</updated>
+        <updated>2015-03-06T20:33:39Z</updated>
         
         <author>
             <name>Timofey Trukhanov</name>
@@ -19,7 +19,7 @@
                 <title>Several simple ways to speed up django</title>
                 <link rel="alternate" href="http://blog.trukhanov.net/Several-simple-ways-to-speed-up-django/" type="text/html" />
                 <id>http://blog.trukhanov.net/Several-simple-ways-to-speed-up-django/</id>
-                <updated>2015-02-05T05:41:00Z</updated>
+                <updated>2015-02-05T20:33:00Z</updated>
                 
                 <summary type="html">There are lots of ways to accelerate your django project, but most of them require significant changes to code. In this post I collected few approaches to improve django performance with little effort.</summary>
                 <content type="html">&lt;p&gt;There are lots of ways to accelerate your django project, but most of them require significant changes to code. In this post I collected few approaches to improve django performance with little effort.&lt;/p&gt;
@@ -75,7 +75,7 @@
     &amp;#x27;django.contrib.auth.hashers.MD5PasswordHasher&amp;#x27;,
 )
 &lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;See &lt;a href=&#34;https://docs.djangoproject.com/en/1.4/topics/testing/#speeding-up-the-tests&#34;&gt;docs&lt;/a&gt; for details. And do not forget that it is suitable only for testing. Don&amp;rsquo;t use it in production.&lt;/p&gt;
+&lt;p&gt;See &lt;a href=&#34;https://docs.djangoproject.com/en/1.4/topics/testing/#speeding-up-the-tests&#34;&gt;docs&lt;/a&gt; for details. And do not forget that it is suitable only for testing. &lt;strong&gt;Don&amp;rsquo;t use it in production&lt;/strong&gt;.&lt;/p&gt;
 &lt;h3&gt;Use get_current_site&lt;/h3&gt;
 &lt;p&gt;If you want to use Django sites framework, I recommend to not use &lt;code&gt;Site&lt;/code&gt; model directly, but rather use helpers, such as &lt;a href=&#34;https://docs.djangoproject.com/en/1.7/ref/contrib/sites/#get-current-site-shortcut&#34;&gt;get_current_site&lt;/a&gt;, &lt;a href=&#34;https://docs.djangoproject.com/en/1.7/ref/contrib/sites/#site-middleware&#34;&gt;site middleware&lt;/a&gt;, &lt;code&gt;Site.objects.get_current()&lt;/code&gt;. All of these helpers use caching, therefore it will save you some db queries.&lt;/p&gt;
 &lt;h3&gt;Remove unused contrib apps&lt;/h3&gt;
@@ -90,8 +90,12 @@
 )
 &lt;/code&gt;&lt;/pre&gt;
 &lt;p&gt;If you sure that you don&amp;rsquo;t need some of them, you can safely remove them from the list. It will save some CPU cycles. Of course you will be able to turn them on whenever you want.&lt;/p&gt;
+&lt;h3&gt;Enable persistent database connections&lt;/h3&gt;
+&lt;p&gt;By default django closes database connection after finishing a request. Since django 1.6 there is a possibility to override this behaviour by setting &lt;a href=&#34;https://docs.djangoproject.com/en/1.7/ref/settings/#std:setting-CONN_MAX_AGE&#34;&gt;CONN_MAX_AGE&lt;/a&gt; to &lt;code&gt;None&lt;/code&gt; or some positive number (default is 0).&lt;/p&gt;
+
+&lt;p&gt;However, you should be careful with this approach. In particular, you should check whether your database server closes idle connections after certain timeout. It could become a problem if such connections will not be used regularly due to low traffic or agressive caching. Read &lt;a href=&#34;https://docs.djangoproject.com/en/1.7/ref/databases/#persistent-connections&#34;&gt;django documentation&lt;/a&gt; for details.&lt;/p&gt;
 &lt;h3&gt;Other&lt;/h3&gt;
-&lt;p&gt;Moreover, do not forget about &lt;a href=&#34;https://docs.djangoproject.com/en/1.7/topics/performance/&#34;&gt;Django performance documentation&lt;/a&gt;!&lt;/p&gt;
+&lt;p&gt;Moreover, do not forget about great &lt;a href=&#34;https://docs.djangoproject.com/en/1.7/topics/performance/&#34;&gt;Django performance documentation&lt;/a&gt;!&lt;/p&gt;
 
 &lt;p&gt;To be added.&lt;/p&gt;
 </content>

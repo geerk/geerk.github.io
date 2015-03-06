@@ -144,7 +144,7 @@
 <span class="p">)</span>
 </pre></div>
 </td></tr></table></div></div>
-<p>See <a href="https://docs.djangoproject.com/en/1.4/topics/testing/#speeding-up-the-tests">docs</a> for details. And do not forget that it is suitable only for testing. Don&rsquo;t use it in production.</p>
+<p>See <a href="https://docs.djangoproject.com/en/1.4/topics/testing/#speeding-up-the-tests">docs</a> for details. And do not forget that it is suitable only for testing. <strong>Don&rsquo;t use it in production</strong>.</p>
 <h3>Use get_current_site</h3>
 <p>If you want to use Django sites framework, I recommend to not use <code>Site</code> model directly, but rather use helpers, such as <a href="https://docs.djangoproject.com/en/1.7/ref/contrib/sites/#get-current-site-shortcut">get_current_site</a>, <a href="https://docs.djangoproject.com/en/1.7/ref/contrib/sites/#site-middleware">site middleware</a>, <code>Site.objects.get_current()</code>. All of these helpers use caching, therefore it will save you some db queries.</p>
 <h3>Remove unused contrib apps</h3>
@@ -167,8 +167,12 @@
 </pre></div>
 </td></tr></table></div></div>
 <p>If you sure that you don&rsquo;t need some of them, you can safely remove them from the list. It will save some CPU cycles. Of course you will be able to turn them on whenever you want.</p>
+<h3>Enable persistent database connections</h3>
+<p>By default django closes database connection after finishing a request. Since django 1.6 there is a possibility to override this behaviour by setting <a href="https://docs.djangoproject.com/en/1.7/ref/settings/#std:setting-CONN_MAX_AGE">CONN_MAX_AGE</a> to <code>None</code> or some positive number (default is 0).</p>
+
+<p>However, you should be careful with this approach. In particular, you should check whether your database server closes idle connections after certain timeout. It could become a problem if such connections will not be used regularly due to low traffic or agressive caching. Read <a href="https://docs.djangoproject.com/en/1.7/ref/databases/#persistent-connections">django documentation</a> for details.</p>
 <h3>Other</h3>
-<p>Moreover, do not forget about <a href="https://docs.djangoproject.com/en/1.7/topics/performance/">Django performance documentation</a>!</p>
+<p>Moreover, do not forget about great <a href="https://docs.djangoproject.com/en/1.7/topics/performance/">Django performance documentation</a>!</p>
 
 <p>To be added.</p>
 
