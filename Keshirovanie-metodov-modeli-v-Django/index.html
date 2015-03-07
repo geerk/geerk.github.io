@@ -1,37 +1,20 @@
 <!DOCTYPE html>
-
 <html lang="ru">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
-<meta name="author" content="Timofey Trukhanov">
-<meta name="description" content="Персональный блог Тимофея Труханова">
-<meta name="generator" content="mynt v0.3.1">
-
-<link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon">
-
-<link rel="alternate" href="/feed.xml" type="application/atom+xml">
-
-<link rel="stylesheet" href="/assets/css/screen.css" type="text/css">
-<link rel="stylesheet" href="/assets/css/pygments.css" type="text/css">
-
-
+    <meta name="author" content="Timofey Trukhanov">
+    <meta name="keywords" content="caching, django, python">
+    <meta name="description" content="кеширование методов модели в Джанго в пределах одного запроса">
+    <meta name="generator" content="mynt v0.3.1">
+    <link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon">
+    <link rel="alternate" href="/feed.xml" type="application/atom+xml">
+    <link rel="stylesheet" href="/assets/css/screen.css" type="text/css">
+    <link rel="stylesheet" href="/assets/css/pygments.css" type="text/css">
     <script type="text/javascript">
-        var _gaq = _gaq || [];
-        _gaq.push(['_setAccount', 'UA-41614976-1']);
-        _gaq.push(['_trackPageview']);
-
-        (function() {
-            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-        })();
+    var _gaq=_gaq||[];_gaq.push(['_setAccount','UA-41614976-1']);_gaq.push(['_trackPageview']);(function(){var ga=document.createElement('script');ga.type='text/javascript';ga.async=true;ga.src=('https:'==document.location.protocol?'https://ssl':'http://www')+'.google-analytics.com/ga.js';var s=document.getElementsByTagName('script')[0];s.parentNode.insertBefore(ga,s);})();
     </script>
-
-
     <title>Кеширование методов модели в Джанго в пределах одного запроса &ndash; Труханов блог</title>
 </head>
-
 <body>
     <div id="container">
         <div id="nav">
@@ -54,12 +37,10 @@
                     <!-- <li><a href="http://masters.donntu.edu.ua/2013/fknt/trukhanov/">ДонНТУ</a></li> -->
                 </ul>
         </div>
-
         <div id="header">
             <h1><a href="/">Труханов блог</a></h1>
             
         </div>
-
         <div id="content">
             
     <div class="item post">
@@ -98,12 +79,9 @@
 
     <div id="disqus_thread"></div>
     <script type="text/javascript">
-        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
-        var disqus_shortname = 'trukhanovblog'; // required: replace example with your forum shortname
+        var disqus_shortname = 'trukhanovblog';
         var disqus_identifier = '/Keshirovanie-metodov-modeli-v-Django/';
         var disqus_title = 'Кеширование методов модели в Джанго в пределах одного запроса';
-
-        /* * * DON'T EDIT BELOW THIS LINE * * */
         (function() {
             var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
             dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
@@ -114,7 +92,6 @@
     <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
 
         </div>
-
         <div id="footer">
         <p style="float: right; margin-top: 0px;"><a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.ru"><img alt="Лицензия Creative Commons" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/80x15.png" /></a></p><p>Copyright &copy; 2013-2015 Timofey Trukhanov &ndash; powered by <a href="http://mynt.mirroredwhite.com/">mynt</a></p>
         </div>
