@@ -49,7 +49,7 @@
         </div>
 
         <div class="body">
-            <p>Twisted was developed long before <a href="https://docs.python.org/dev/library/concurrent.futures.html">futures</a> was introduced in python. So they are invented their own way to represent the sequence of asynchronous callbacks and called it <a href="https://twistedmatrix.com/documents/current/core/howto/defer.html">Deferred</a>. Tornado is much younger and they eventually adopted futures. However, since twisted has emerged earlier, it now has much bigger amount of reusable apps than tornado that simplify lots of things (like database access).</p>
+            <p>Twisted was developed long before <a href="https://docs.python.org/dev/library/concurrent.futures.html">futures</a> was introduced in python. So they have invented their own way to represent the sequence of asynchronous callbacks and called it <a href="https://twistedmatrix.com/documents/current/core/howto/defer.html">Deferred</a>. Tornado is much younger and they eventually adopted futures. However, since twisted has emerged earlier, it now has much bigger amount of reusable apps than tornado that simplify lots of things (like database access).</p>
 
 <p>Therefore, <a href="http://tornado.readthedocs.org/en/latest/twisted.html">possibility</a> to run twisted applications on top of tornado&rsquo;s ioloop was added. However, due to fact that twisted operates with deferreds instead of futures, you can&rsquo;t inline calls to such applications.</p>
 
@@ -71,7 +71,7 @@
     <span class="c"># some business logic here</span>
 </pre></div>
 </td></tr></table></div></div>
-<p>The problem is you can&rsquo;t use <a href="http://twistedmatrix.com/documents/15.0.0/api/twisted.internet.defer.inlineCallbacks.html">deffer.inlineCallbacks</a> in tornado, because it uses it&rsquo;s own <a href="http://tornado.readthedocs.org/en/latest/gen.html#tornado.gen.coroutine">gen.coroutine</a> decorator. Fortunately, you can easily convert <code>Deferred</code> object into <code>Future</code> object since both serve the same needs. Here is the solution:</p>
+<p>The problem is you can&rsquo;t use <a href="http://twistedmatrix.com/documents/15.0.0/api/twisted.internet.defer.inlineCallbacks.html">deffer.inlineCallbacks</a> in tornado, because it uses its own <a href="http://tornado.readthedocs.org/en/latest/gen.html#tornado.gen.coroutine">gen.coroutine</a> decorator. Fortunately, you can easily convert <code>Deferred</code> object into <code>Future</code> object since both serve the same needs. Here is the solution:</p>
 <div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
  2
  3
@@ -93,7 +93,7 @@
     <span class="k">return</span> <span class="n">future</span>
 </pre></div>
 </td></tr></table></div></div>
-<p>Here I just create bare new future object and connect it&rsquo;s success/failure methods to the corresponding methods of the deferred object and return it. In such a way, you can convert deferred objects from twisted&rsquo;s applications and use them inside your tornado code, for example:</p>
+<p>Here I just create a bare new future object and connect it&rsquo;s success/failure methods to the corresponding methods of the deferred object and return it. In such a way, you can convert deferred objects from twisted&rsquo;s applications and use them inside your tornado code, for example:</p>
 <div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
 2
 3
