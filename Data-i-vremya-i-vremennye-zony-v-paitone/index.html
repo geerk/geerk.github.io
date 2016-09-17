@@ -85,9 +85,7 @@
 <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2014</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">23</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="mi">154669</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=&lt;</span><span class="n">UTC</span><span class="o">&gt;</span><span class="p">)</span>
 </pre></div>
 </td></tr></table></div></div>
-<p>В моём случае создалось время во временной зоне UTC, потому что в настройках у меня указано <code>TIME_ZONE = &#39;UTC&#39;</code>.</p>
-
-<p>Чаще всего рекомендуют в коде работать исключительно с осведомлённым временем (например <a href="http://asvetlov.blogspot.com/2011/02/date-and-time.html">тут</a>), однако существует альтернативная точка зрения, которая заключается в том, что если повсюду в коде использовать только UTC, то можно обойтись и наивным временем. Подробнее можно почитать, например <a href="http://habrahabr.ru/company/mailru/blog/242615/">здесь</a>.</p>
+<p><code>timezone.now()</code> всегда возвращает осведомленное время во временной зоне UTC. Чаще всего рекомендуют в коде работать исключительно с осведомлённым временем (например <a href="http://asvetlov.blogspot.com/2011/02/date-and-time.html">тут</a>), однако существует альтернативная точка зрения, которая заключается в том, что если повсюду в коде использовать только UTC, то можно обойтись и наивным временем. Подробнее можно почитать, например <a href="http://habrahabr.ru/company/mailru/blog/242615/">здесь</a>.</p>
 <h3>Как получить текущую дату?</h3>
 <p>Сначала может показаться, что дата не зависит от временных зон, так как не содержит часы, минуты и секунды, но это не так. Дата также зависит от временной зоны. В определённые моменты времени на Земле в разных странах может быть разная дата. Всё, конечно, зависит от того, в какой временной зоне вам нужна дата. Если в UTC, то её можно получить, например, так:</p>
 <div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
@@ -163,7 +161,7 @@
 
         </div>
         <div id="footer">
-        <p style="float: right; margin-top: 0px;"><a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.ru"><img alt="Лицензия Creative Commons" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/80x15.png" /></a></p><p>Copyright &copy; 2013-2015 Timofey Trukhanov &ndash; powered by <a href="http://mynt.mirroredwhite.com/">mynt</a></p>
+        <p style="float: right; margin-top: 0px;"><a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.ru"><img alt="Лицензия Creative Commons" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/80x15.png" /></a></p><p>Copyright &copy; 2013-2016 Timofey Trukhanov &ndash; powered by <a href="http://mynt.mirroredwhite.com/">mynt</a></p>
         </div>
     </div>
 </body>
