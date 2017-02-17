@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="author" content="Timofey Trukhanov">
+    <meta name="keywords" content="data-structures, rust">
+    <meta name="description" content="In this post I describe how to emulate stack data structure in Rust language">
+    <meta name="generator" content="mynt v0.3.1">
+    <link rel="shortcut icon" href="/assets/images/favicon.ico" type="image/x-icon">
+    
+    <link rel="stylesheet" href="/assets/css/all.min.css" type="text/css">
+    <script type="text/javascript">
+    var _gaq=_gaq||[];_gaq.push(['_setAccount','UA-41614976-1']);_gaq.push(['_trackPageview']);(function(){var ga=document.createElement('script');ga.type='text/javascript';ga.async=true;ga.src=('https:'==document.location.protocol?'https://ssl':'http://www')+'.google-analytics.com/ga.js';var s=document.getElementsByTagName('script')[0];s.parentNode.insertBefore(ga,s);})();
+    </script>
+    <title>Stack data structure in Rust &ndash; Труханов блог</title>
+</head>
+<body>
+    <div id="container">
+        <div id="nav">
+            <ul>
+                <li><a href="/">Blog</a></li>
+                <li><a href="/archives/">Archives</a></li>
+                
+            </ul>
+                <ul id="social">
+            
+                    
+                    
+                    <li><a href="https://github.com/geerk"><img src="/assets/images/social/github.png" width="16" height="16" alt="GitHub"></a></li>
+                    
+                    
+                    
+                    
+                    <li><a href="https://twitter.com/#!/geerk"><img src="/assets/images/social/twitter.png" width="16" height="16" alt="Twitter"></a></li>
+            
+                    <!-- <li><a href="http://masters.donntu.edu.ua/2013/fknt/trukhanov/">ДонНТУ</a></li> -->
+                </ul>
+        </div>
+        <div id="header">
+            <h1><a href="/">Труханов блог</a></h1>
+            
+        </div>
+        <div id="content">
+            
+    <div class="item post">
+        <div class="header">
+            <h1>Stack data structure in Rust</h1>
+            <h2>Friday, February 17, 2017 <span>&raquo;</span> <a href="/tags/data-structures/">data-structures</a>, <a href="/tags/rust/">rust</a></h2>
+        </div>
+
+        <div class="body">
+            <p>There is no specialized data structure for stack in Rust, however we can easily use <a href="https://doc.rust-lang.org/std/collections/struct.LinkedList.html">LinkedList</a> for this. What essential for stack is to effectively modify its top. LinkedList in Rust provides two pairs of methods to achive this.</p>
+
+<ol>
+<li>To add/remove from the beginning of a list:
+
+<ul>
+<li><a href="https://doc.rust-lang.org/std/collections/struct.LinkedList.html#method.push_front">push_front</a></li>
+<li><a href="https://doc.rust-lang.org/std/collections/struct.LinkedList.html#method.pop_front">pop_front</a></li>
+</ul></li>
+<li>To add/remove from the end of a list:
+
+<ul>
+<li><a href="https://doc.rust-lang.org/std/collections/struct.LinkedList.html#method.push_back">push_back</a></li>
+<li><a href="https://doc.rust-lang.org/std/collections/struct.LinkedList.html#method.pop_back">pop_back</a></li>
+</ul></li>
+</ol>
+
+<p>Additionaly to access first and last elements we can use <a href="https://doc.rust-lang.org/std/collections/struct.LinkedList.html#method.front">front</a> and <a href="https://doc.rust-lang.org/std/collections/struct.LinkedList.html#method.back">back</a> methods respectively.</p>
+
+<p>Note: it is important to use only one of pop/push pairs and do not mix them in the code, otherwise it will not be stack anymore.</p>
+
+<p>Here is an example how to emulate stack using push_back/pop_back:</p>
+<div class="code"><div><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15</pre></div></td><td class="code"><div class="highlight"><pre><span class="k">use</span> <span class="n">std</span><span class="o">::</span><span class="n">collections</span><span class="o">::</span><span class="n">LinkedList</span><span class="p">;</span>
+
+<span class="k">fn</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">let</span> <span class="k">mut</span> <span class="n">stack</span> <span class="o">=</span> <span class="n">LinkedList</span><span class="o">::</span><span class="n">new</span><span class="p">();</span>
+    <span class="n">assert_eq</span><span class="o">!</span><span class="p">(</span><span class="n">stack</span><span class="p">.</span><span class="n">back</span><span class="p">(),</span> <span class="n">None</span><span class="p">);</span>
+    <span class="n">stack</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="m">1</span><span class="p">);</span>
+    <span class="n">assert_eq</span><span class="o">!</span><span class="p">(</span><span class="n">stack</span><span class="p">.</span><span class="n">back</span><span class="p">(),</span> <span class="n">Some</span><span class="p">(</span><span class="o">&amp;</span><span class="m">1</span><span class="p">));</span>
+    <span class="n">stack</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="m">2</span><span class="p">);</span>
+    <span class="n">assert_eq</span><span class="o">!</span><span class="p">(</span><span class="n">stack</span><span class="p">.</span><span class="n">back</span><span class="p">(),</span> <span class="n">Some</span><span class="p">(</span><span class="o">&amp;</span><span class="m">2</span><span class="p">));</span>
+    <span class="n">assert_eq</span><span class="o">!</span><span class="p">(</span><span class="n">stack</span><span class="p">.</span><span class="n">pop_back</span><span class="p">(),</span> <span class="n">Some</span><span class="p">(</span><span class="m">2</span><span class="p">));</span>
+    <span class="n">assert_eq</span><span class="o">!</span><span class="p">(</span><span class="n">stack</span><span class="p">.</span><span class="n">back</span><span class="p">(),</span> <span class="n">Some</span><span class="p">(</span><span class="o">&amp;</span><span class="m">1</span><span class="p">));</span>
+    <span class="n">assert_eq</span><span class="o">!</span><span class="p">(</span><span class="n">stack</span><span class="p">.</span><span class="n">pop_back</span><span class="p">(),</span> <span class="n">Some</span><span class="p">(</span><span class="m">1</span><span class="p">));</span>
+    <span class="n">assert_eq</span><span class="o">!</span><span class="p">(</span><span class="n">stack</span><span class="p">.</span><span class="n">pop_back</span><span class="p">(),</span> <span class="n">None</span><span class="p">);</span>
+    <span class="n">assert_eq</span><span class="o">!</span><span class="p">(</span><span class="n">stack</span><span class="p">.</span><span class="n">back</span><span class="p">(),</span> <span class="n">None</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</td></tr></table></div></div>
+        </div>
+    </div>
+
+    <div id="share-buttons">
+        <a href="http://twitter.com/share?url=http://blog.trukhanov.net/Stack-data-structure-in-Rust/&text=Stack data structure in Rust" target="_blank"><img src="/assets/images/social/share-twitter.png" alt="Twitter" /></a>
+        <a href="http://www.facebook.com/sharer.php?u=http://blog.trukhanov.net/Stack-data-structure-in-Rust/" target="_blank"><img src="/assets/images/social/share-facebook.png" alt="Facebook" /></a>
+        <a href="https://plus.google.com/share?url=http://blog.trukhanov.net/Stack-data-structure-in-Rust/" target="_blank"><img src="/assets/images/social/share-google.png" alt="Google" /></a>
+        <a href="http://reddit.com/submit?url=http://blog.trukhanov.net/Stack-data-structure-in-Rust/&title=Stack data structure in Rust" target="_blank"><img src="/assets/images/social/share-reddit.png" alt="Reddit" /></a>
+        <a href="http://www.linkedin.com/shareArticle?mini=true&url=http://blog.trukhanov.net/Stack-data-structure-in-Rust/" target="_blank"><img src="/assets/images/social/share-linkedin.png" alt="LinkedIn" /></a>
+    </div>
+
+
+    <div id="disqus_thread"></div>
+    <script type="text/javascript">var disqus_shortname="trukhanovblog",disqus_identifier="/Stack-data-structure-in-Rust/",disqus_title="Stack data structure in Rust";(function(){var dsq=document.createElement('script');dsq.type='text/javascript';dsq.async=true;dsq.src='//'+disqus_shortname+'.disqus.com/embed.js';(document.getElementsByTagName('head')[0]||document.getElementsByTagName('body')[0]).appendChild(dsq);})();</script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+        </div>
+        <div id="footer">
+        <p style="float: right; margin-top: 0px;"><a rel="license" href="http://creativecommons.org/licenses/by/3.0/deed.ru"><img alt="Лицензия Creative Commons" style="border-width:0" src="http://i.creativecommons.org/l/by/3.0/80x15.png" /></a></p><p>Copyright &copy; 2013-2017 Timofey Trukhanov &ndash; powered by <a href="http://mynt.mirroredwhite.com/">mynt</a></p>
+        </div>
+    </div>
+</body>
+</html>
